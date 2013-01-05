@@ -2,10 +2,10 @@ import Control.Monad.State
 import Player
 import World
 
-loop = do
-  spawn initPlayer
-  spawn initPlayer
-  World.tick
+loop :: StateT World IO ()
+loop = lift initPlayer >>= spawn >>
+       lift initPlayer >>= spawn >>
+       World.tick
 
 main = do
   s <- execStateT loop initWorld
