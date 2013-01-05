@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module World where
 
 import Control.Monad.State
@@ -12,22 +14,22 @@ newtype WorldMonad a = WorldMonad (StateT World IO a)
 
 initWorld = World {players = [], age = 0}
 
-getPlayers :: StateT World IO [Player]
+getPlayers :: (MonadState World) m => m [Player]
 getPlayers = players `liftM` get
 
-setPlayers :: [Player] -> StateT World IO ()
+setPlayers :: (MonadState World) m => [Player] -> m ()
 setPlayers players = get >>= \state -> put (state {players = players})
 
-getAge :: StateT World IO Int
+getAge :: (MonadState World) m => m Int
 getAge = age `liftM` get
 
-setAge :: Int -> StateT World IO ()
+setAge :: (MonadState World) m => Int -> m ()
 setAge age = get >>= \state -> put (state {age = age})
 
-spawn :: Player -> StateT World IO ()
+spawn :: (MonadState World) m => Player -> m ()
 spawn player = getPlayers >>= setPlayers . (player:)
 
-tick :: StateT World IO ()
+tick :: (MonadState World) m => m ()
 tick = do
   a <- getAge
   setAge (a + 1)
