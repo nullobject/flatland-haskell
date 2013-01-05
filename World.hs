@@ -12,8 +12,9 @@ data World = World {
 
 -- newtype WorldState a = WorldState (StateT World IO a)
 
-initWorld :: World
-initWorld = World {players = [], age = 0}
+initWorld :: IO World
+initWorld = do
+  return World {players = [], age = 0}
 
 incrementAge :: World -> World
 incrementAge world = world {age = age world + 1}

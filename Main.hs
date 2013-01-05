@@ -8,5 +8,6 @@ loop = lift initPlayer >>= spawn >>
        World.tick
 
 main = do
-  s <- execStateT loop initWorld
-  print (show s)
+  world <- initWorld
+  state <- execStateT loop world
+  print (show state)
