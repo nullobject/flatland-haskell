@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module World where
 
 import Control.Monad.State
@@ -10,7 +8,7 @@ data World = World {
   age     :: Int
 } deriving (Show)
 
--- newtype WorldState a = WorldState (StateT World IO a)
+type WorldState = StateT World IO ()
 
 initWorld :: IO World
 initWorld = do
@@ -26,13 +24,13 @@ addPlayer :: Player -> World -> World
 addPlayer player world = world {players = player : players world}
 
 -- Ticks the world state.
-tick :: (MonadState World m) => m ()
+tick :: WorldState
 tick = modify $ incrementAge . tickPlayers
 
 -- Spawns the given player.
-spawn :: (MonadState World m) => Player -> m ()
+spawn :: Player -> WorldState
 spawn player = modify $ addPlayer player
 
 -- Moves the player with the given ID.
-move :: (MonadState World m) => String -> m ()
+move :: String -> WorldState
 move id = return ()

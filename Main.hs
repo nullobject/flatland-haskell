@@ -2,7 +2,7 @@ import Control.Monad.State
 import Player
 import World
 
-loop :: StateT World IO ()
+loop :: WorldState
 loop = lift initPlayer >>= spawn >>
        lift initPlayer >>= spawn >>
        World.tick
