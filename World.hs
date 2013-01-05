@@ -10,29 +10,28 @@ data World = World {
   age     :: Int
 } deriving (Show)
 
-newtype WorldMonad a = WorldMonad (StateT World IO a)
+-- newtype WorldState a = WorldState (StateT World IO a)
 
+initWorld :: World
 initWorld = World {players = [], age = 0}
 
-getPlayers :: (MonadState World) m => m [Player]
-getPlayers = players `liftM` get
+incrementAge :: World -> World
+incrementAge world = world {age = age world + 1}
 
-setPlayers :: (MonadState World) m => [Player] -> m ()
-setPlayers players = get >>= \state -> put (state {players = players})
+tickPlayers :: World -> World
+tickPlayers world = world {players = map Player.tick $ players world}
 
-getAge :: (MonadState World) m => m Int
-getAge = age `liftM` get
+addPlayer :: Player -> World -> World
+addPlayer player world = world {players = player : players world}
 
-setAge :: (MonadState World) m => Int -> m ()
-setAge age = get >>= \state -> put (state {age = age})
+-- Ticks the world state.
+tick :: (MonadState World m) => m ()
+tick = modify $ incrementAge . tickPlayers
 
-spawn :: (MonadState World) m => Player -> m ()
-spawn player = getPlayers >>= setPlayers . (player:)
+-- Spawns the given player.
+spawn :: (MonadState World m) => Player -> m ()
+spawn player = modify $ addPlayer player
 
-tick :: (MonadState World) m => m ()
-tick = do
-  a <- getAge
-  setAge (a + 1)
-  p <- getPlayers
-  let p' = map Player.tick p
-  setPlayers p'
+-- Moves the player with the given ID.
+move :: (MonadState World m) => String -> m ()
+move id = return ()
