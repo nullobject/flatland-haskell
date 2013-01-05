@@ -2,6 +2,11 @@ import Control.Monad.State
 import Player
 import World
 
+loop = do
+  spawn initPlayer
+  spawn initPlayer
+  World.tick
+
 main = do
-  s <- runStateT (do spawn initPlayer; spawn initPlayer; World.tick) initWorld
-  putStrLn (show s)
+  s <- execStateT loop initWorld
+  print (show s)
