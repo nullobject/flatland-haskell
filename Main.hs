@@ -1,8 +1,6 @@
 import Control.Monad.State
 import Data.Aeson (encode)
 import qualified Data.Map as Map
-import Data.Maybe (fromJust)
-import Data.UUID (fromString)
 import qualified Player
 import qualified World
 import qualified WorldView
