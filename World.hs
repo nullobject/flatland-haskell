@@ -1,36 +1,52 @@
 module World where
 
 import Control.Monad.State
-import Player (Player, tick)
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Data.UUID (UUID)
+import Data.UUID.V4 (nextRandom)
+import Player (Player)
+import qualified Player
 
 data World = World {
-  players :: [Player],
+  players :: Map UUID Player,
   age     :: Int
 } deriving (Show)
 
-type WorldState = StateT World IO ()
+type WorldState = StateT World IO
 
-initWorld :: IO World
-initWorld = do
-  return World {players = [], age = 0}
+-- Returns a new world.
+empty :: IO World
+empty = do
+  return World {
+    players = Map.empty,
+    age     = 0
+  }
 
 incrementAge :: World -> World
-incrementAge world = world {age = age world + 1}
+incrementAge w = w {age = a + 1}
+  where a = age w
 
 tickPlayers :: World -> World
-tickPlayers world = world {players = map Player.tick $ players world}
+tickPlayers w = w {players = Map.map Player.tick ps}
+  where ps = players w
 
-addPlayer :: Player -> World -> World
-addPlayer player world = world {players = player : players world}
+addPlayer :: UUID -> Player -> World -> World
+addPlayer uuid p w = w {players = Map.insert uuid p ps}
+  where ps = players w
 
 -- Ticks the world state.
-tick :: WorldState
+tick :: WorldState ()
 tick = modify $ incrementAge . tickPlayers
 
 -- Spawns the given player.
-spawn :: Player -> WorldState
-spawn player = modify $ addPlayer player
+spawn :: Player -> WorldState ()
+spawn p = lift nextRandom >>= \uuid -> modify $ addPlayer uuid p
 
 -- Moves the player with the given ID.
-move :: String -> WorldState
-move id = return ()
+move :: UUID -> WorldState ()
+move uuid = do
+  w <- get
+  let uuid' = head $ Map.keys $ players w
+  let ps = Map.adjust Player.move uuid' $ players w
+  put w {players = ps}

@@ -1,13 +1,18 @@
 import Control.Monad.State
-import Player
-import World
+import Data.Maybe (fromJust)
+import Data.UUID (fromString)
+import qualified Player
+import qualified World
 
-loop :: WorldState
-loop = lift initPlayer >>= spawn >>
-       lift initPlayer >>= spawn >>
-       World.tick
+initState :: World.WorldState ()
+initState = lift Player.empty >>= World.spawn >>
+            lift Player.empty >>= World.spawn
+
+loop :: World.WorldState ()
+loop = World.move (fromJust (fromString "acb42012-4d0f-47dd-a541-b6f949f4066c")) >> World.tick
 
 main = do
-  world <- initWorld
-  state <- execStateT loop world
-  print (show state)
+  s   <- World.empty
+  s'  <- execStateT initState s
+  s'' <- execStateT loop s'
+  print (show s'')
