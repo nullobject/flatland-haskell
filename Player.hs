@@ -2,7 +2,8 @@
 
 module Player where
 
-import Data.Aeson (ToJSON)
+import Data.Aeson (toJSON, ToJSON)
+import Data.Char (toLower)
 import GHC.Generics (Generic)
 
 type Age    = Int
@@ -11,7 +12,8 @@ type Vector = (Int, Int)
 
 data StateName = Dead | Idle deriving (Eq, Generic, Show)
 
-instance ToJSON StateName
+instance ToJSON StateName where
+  toJSON s = toJSON $ map toLower $ show s
 
 data Player = Player {
   stateName :: StateName,
