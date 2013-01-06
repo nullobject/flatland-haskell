@@ -23,10 +23,14 @@ empty = do
     age       = 0
   }
 
--- Ticks the player state.
-tick :: Player -> Player
-tick player = player {age = age'}
+-- Increments the age of the player.
+incrementAge :: Player -> Player
+incrementAge player = player {age = age'}
   where age' = age player + 1
+
+-- Ticks the player.
+tick :: Player -> Player
+tick player = incrementAge player
 
 -- Moves the player.
 move :: Player -> Player

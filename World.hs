@@ -23,27 +23,30 @@ empty = do
     age     = 0
   }
 
+-- Increments the age of the world.
 incrementAge :: World -> World
 incrementAge world = world {age = age'}
   where age' = age world + 1
 
+-- Ticks the players in the world.
 tickPlayers :: World -> World
 tickPlayers world = world {players = players'}
   where players' = Map.map Player.tick $ players world
 
+-- Adds a player to the world.
 addPlayer :: UUID -> Player -> World -> World
 addPlayer uuid player world = world {players = players'}
   where players' = Map.insert uuid player $ players world
 
--- Ticks the world state.
+-- Ticks the world.
 tick :: WorldState ()
 tick = modify $ incrementAge . tickPlayers
 
--- Spawns the given player.
+-- Spawns a player in the world.
 spawn :: Player -> WorldState ()
 spawn player = lift nextRandom >>= \uuid -> modify $ addPlayer uuid player
 
--- Moves the player with the given ID.
+-- Moves a player in the world.
 move :: UUID -> WorldState ()
 move uuid = do
   world <- get
