@@ -1,17 +1,26 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Player where
+
+import Data.Aeson (ToJSON)
+import GHC.Generics (Generic)
 
 type Age    = Int
 type Health = Int
-type Vector = (Double, Double)
+type Vector = (Int, Int)
 
-data StateName = Dead | Idle deriving (Eq, Show)
+data StateName = Dead | Idle deriving (Eq, Generic, Show)
+
+instance ToJSON StateName
 
 data Player = Player {
   stateName :: StateName,
   health    :: Health,
   position  :: Vector,
   age       :: Age
-} deriving (Show)
+} deriving (Generic, Show)
+
+instance ToJSON Player
 
 -- Returns a new player.
 empty :: IO Player

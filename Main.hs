@@ -1,9 +1,11 @@
 import Control.Monad.State
+import Data.Aeson (encode)
 import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 import Data.UUID (fromString)
 import qualified Player
 import qualified World
+import qualified WorldView
 
 initWorld :: World.WorldState ()
 initWorld = lift Player.empty >>= World.spawn >>
@@ -20,4 +22,4 @@ main :: IO ()
 main = World.empty >>=
        execStateT initWorld >>=
        execStateT loop >>=
-       print
+       \world -> print $ encode $ WorldView.fromWorld world
