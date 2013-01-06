@@ -16,10 +16,10 @@ instance ToJSON StateName where
   toJSON s = toJSON $ map toLower $ show s
 
 data Player = Player {
-  stateName :: StateName,
-  health    :: Health,
-  position  :: Vector,
-  age       :: Age
+  state    :: StateName,
+  health   :: Health,
+  position :: Vector,
+  age      :: Age
 } deriving (Generic, Show)
 
 instance ToJSON Player
@@ -27,10 +27,10 @@ instance ToJSON Player
 -- Returns a new player.
 empty :: Player
 empty = Player {
-  stateName = Idle,
-  health    = 100,
-  position  = (0, 0),
-  age       = 0
+  state    = Idle,
+  health   = 100,
+  position = (0, 0),
+  age      = 0
 }
 
 -- Increments the age of the player.
