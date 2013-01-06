@@ -25,10 +25,10 @@ empty = do
 
 -- Ticks the player state.
 tick :: Player -> Player
-tick p = p {age = a + 1}
-  where a = age p
+tick player = player {age = age'}
+  where age' = age player + 1
 
 -- Moves the player.
 move :: Player -> Player
-move p = p {position = (x + 1, y + 1)}
-  where (x, y) = position p
+move player = player {position = (x + 1, y + 1)}
+  where (x, y) = position player
