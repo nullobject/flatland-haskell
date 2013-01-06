@@ -25,14 +25,13 @@ data Player = Player {
 instance ToJSON Player
 
 -- Returns a new player.
-empty :: IO Player
-empty = do
-  return Player {
-    stateName = Idle,
-    health    = 100,
-    position  = (0, 0),
-    age       = 0
-  }
+empty :: Player
+empty = Player {
+  stateName = Idle,
+  health    = 100,
+  position  = (0, 0),
+  age       = 0
+}
 
 -- Increments the age of the player.
 incrementAge :: Player -> Player

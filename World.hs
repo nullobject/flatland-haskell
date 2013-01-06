@@ -16,12 +16,11 @@ data World = World {
 type WorldState = StateT World IO
 
 -- Returns a new world.
-empty :: IO World
-empty = do
-  return World {
-    players = Map.empty,
-    age     = 0
-  }
+empty :: World
+empty = World {
+  players = Map.empty,
+  age     = 0
+}
 
 -- Increments the age of the world.
 incrementAge :: World -> World
