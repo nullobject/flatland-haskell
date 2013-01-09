@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, Rank2Types #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Server where
 
@@ -30,7 +30,7 @@ streamEnumerator = repeatM $ do
   n <- liftIO $ randomIO :: IO Int
   liftIO $ threadDelay delay
   return $ fromString $ "data: " ++ (show n) ++ "\n\n"
-  where delay = oneMillisecond * 100
+  where delay = oneMillisecond * 1000
 
 site :: Snap ()
 site =
