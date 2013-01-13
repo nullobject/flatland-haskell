@@ -17,9 +17,9 @@ import Types
 
 actionHandler :: RequestChan -> Snap ()
 actionHandler chan = do
+  let message = ActionMessage Move
   WorldViewMessage worldView <- liftIO $ chan `ask` message
   writeLBS $ encode $ worldView
-  where message = ActionMessage Idle
 
 streamHandler :: (forall a . Enumerator Builder IO a) -> Snap ()
 streamHandler enum = modifyResponse $
@@ -32,8 +32,7 @@ streamHandler enum = modifyResponse $
 
 streamEnumerator :: Enumerator Builder IO a
 streamEnumerator = repeatM $ do
-  n <- liftIO $ randomIO :: IO Int
-  liftIO $ threadDelay oneSecond
+  n <- liftIO $ threadDelay oneSecond >> randomIO :: IO Int
   return $ fromString $ "data: " ++ (show n) ++ "\n\n"
 
 site :: RequestChan -> Snap ()

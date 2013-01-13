@@ -28,8 +28,8 @@ drainTChan chan = do
     return (x:xs)
 
 -- Sends a message to a sender.
-tell :: Sender -> Message -> STM ()
-tell sender message = putTMVar sender message
+tell :: Sender -> Message -> IO ()
+tell sender message = atomically $ putTMVar sender message
 
 -- Writes a message to the channel and waits for a response.
 ask :: RequestChan -> Message -> IO Message
