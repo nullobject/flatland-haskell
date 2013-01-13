@@ -31,4 +31,6 @@ executable medusa
     random,
     snap-core,
     snap-server,
+    stm,
+    utf8-string,
     uuid
