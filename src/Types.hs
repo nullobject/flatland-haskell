@@ -21,12 +21,12 @@ oneSecond = 1000000
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
   empty <- isEmptyTChan chan
-  if empty
-  then return []
-  else do
-    x <- readTChan chan
-    xs <- drainTChan chan
-    return (x:xs)
+  if empty then return [] else drain
+  where
+    drain = do
+      x <- readTChan chan
+      xs <- drainTChan chan
+      return (x:xs)
 
 -- Sends a message to a sender.
 tell :: Sender -> Message -> IO ()
