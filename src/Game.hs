@@ -3,10 +3,8 @@ module Game where
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (atomically)
 import           Control.Monad.State
-import qualified Data.Map as Map
 import           Data.UUID (UUID)
 import           Data.UUID.V4 (nextRandom)
-import           GHC.Conc (unsafeIOToSTM)
 import qualified Player
 import           World (World, WorldState)
 import qualified World
@@ -19,8 +17,8 @@ initWorld = do
   World.spawn $ Player.empty uuid
 
 execute :: Action -> UUID -> WorldState ()
-execute Idle uuid = return ()
 execute Move uuid = World.move uuid
+execute _ _ = return ()
 
 handleRequest :: World -> Request -> IO World
 handleRequest world (Request sender (ActionMessage action uuid)) = do
