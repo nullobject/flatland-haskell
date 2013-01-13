@@ -4,7 +4,7 @@ module Player where
 
 import Data.Aeson (toJSON, ToJSON)
 import Data.Char (toLower)
-import Data.UUID (toString, UUID)
+import Data.UUID (UUID)
 import GHC.Generics (Generic)
 
 type Age    = Int
@@ -17,7 +17,7 @@ instance ToJSON StateName where
   toJSON s = toJSON $ map toLower $ show s
 
 instance ToJSON UUID where
-  toJSON uuid = toJSON $ toString uuid
+  toJSON uuid = toJSON $ show uuid
 
 data Player = Player {
   id       :: UUID,
