@@ -1,11 +1,12 @@
 module Main where
 
-import Control.Concurrent (forkIO)
-
+import           Control.Concurrent (forkIO)
+import           Control.Concurrent.STM (newTChanIO)
 import qualified Game
 import qualified Server
 
 main :: IO ()
 main = do
-  forkIO $ Game.run
-  Server.run
+  chan <- newTChanIO
+  forkIO $ Game.run chan
+  Server.run chan
