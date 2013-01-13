@@ -4,6 +4,7 @@ import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (atomically, STM)
 import           Control.Monad.State
 import qualified Data.Map as Map
+import           Data.UUID.V4 (nextRandom)
 import           GHC.Conc (unsafeIOToSTM)
 import qualified Player
 import qualified World
@@ -11,7 +12,9 @@ import qualified WorldView
 import           Types
 
 initWorld :: World.WorldState ()
-initWorld = World.spawn Player.empty
+initWorld = do
+  uuid <- liftIO $ nextRandom
+  World.spawn $ Player.empty uuid
 
 tick :: World.WorldState ()
 tick = do

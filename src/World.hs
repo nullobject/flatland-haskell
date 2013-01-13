@@ -4,7 +4,6 @@ import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.UUID (UUID)
-import Data.UUID.V4 (nextRandom)
 import Player (Player)
 import qualified Player
 
@@ -33,9 +32,11 @@ tickPlayers world = world {players = players'}
   where players' = Map.map Player.tick $ players world
 
 -- Adds a player to the world.
-addPlayer :: UUID -> Player -> World -> World
-addPlayer uuid player world = world {players = players'}
-  where players' = Map.insert uuid player $ players world
+addPlayer :: Player -> World -> World
+addPlayer player world = world {players = players'}
+  where
+    uuid = Player.id player
+    players' = Map.insert uuid player $ players world
 
 -- Ticks the world.
 tick :: WorldState ()
@@ -43,12 +44,11 @@ tick = modify $ incrementAge . tickPlayers
 
 -- Spawns a player in the world.
 spawn :: Player -> WorldState ()
-spawn player = lift nextRandom >>= \uuid -> modify $ addPlayer uuid player
+spawn player = modify $ addPlayer player
 
 -- Moves a player in the world.
 move :: UUID -> WorldState ()
 move uuid = do
   world <- get
-  let uuid' = head $ Map.keys $ players world
-  let players' = Map.adjust Player.move uuid' $ players world
+  let players' = Map.adjust Player.move uuid $ players world
   put world {players = players'}
