@@ -23,8 +23,7 @@ execute Idle uuid = return ()
 execute Move uuid = World.move uuid
 
 handleRequest :: World -> Request -> IO World
-handleRequest world (Request sender (ActionMessage action)) = do
-  let uuid = head $ Map.keys $ World.players world
+handleRequest world (Request sender (ActionMessage action uuid)) = do
   putStrLn $ show action ++ " (" ++ show uuid ++ ")"
   world' <- execStateT (execute action uuid) world
   let message = WorldViewMessage $ WorldView.fromWorld $ world'

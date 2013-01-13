@@ -1,6 +1,7 @@
 module Types where
 
 import Control.Concurrent.STM
+import Data.UUID (UUID)
 import WorldView (WorldView)
 
 type Sender = TMVar Message
@@ -11,7 +12,7 @@ data Request = Request Sender Message
 
 type RequestChan = TChan Request
 
-data Message = ActionMessage Action | WorldViewMessage WorldView deriving (Show)
+data Message = ActionMessage Action UUID | WorldViewMessage WorldView deriving (Show)
 
 oneSecond :: Int
 oneSecond = 1000000

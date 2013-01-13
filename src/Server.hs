@@ -2,22 +2,26 @@
 
 module Server where
 
-import Blaze.ByteString.Builder (Builder)
-import Blaze.ByteString.Builder.Char.Utf8 (fromString)
-import Control.Applicative
-import Control.Concurrent (threadDelay)
-import Control.Monad.State (liftIO)
-import Data.Aeson (encode)
-import Data.Enumerator.List (repeatM)
-import Snap.Core hiding (Request)
-import Snap.Http.Server
-import Snap.Util.FileServe
-import System.Random
-import Types
+import           Blaze.ByteString.Builder (Builder)
+import           Blaze.ByteString.Builder.Char.Utf8 (fromString)
+import           Control.Applicative
+import           Control.Concurrent (threadDelay)
+import           Control.Monad.State (liftIO)
+import           Data.Aeson (encode)
+import           Data.Enumerator.List (repeatM)
+import qualified Data.Maybe as Maybe
+import qualified Data.UUID as UUID
+import           Snap.Core hiding (Request)
+import           Snap.Http.Server
+import           Snap.Util.FileServe
+import           System.Random
+import           Types
 
+-- FIXME: Don't fake the uuid.
 actionHandler :: RequestChan -> Snap ()
 actionHandler chan = do
-  let message = ActionMessage Move
+  let uuid = Maybe.fromJust $ UUID.fromString "d2141ba3-3461-41c0-a5d5-8160f524a47b"
+  let message = ActionMessage Move uuid
   WorldViewMessage worldView <- liftIO $ chan `ask` message
   writeLBS $ encode $ worldView
 
