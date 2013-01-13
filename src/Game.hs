@@ -1,30 +1,14 @@
 module Game where
 
 import           Control.Concurrent (threadDelay)
-import           Control.Concurrent.STM
+import           Control.Concurrent.STM (atomically, STM)
 import           Control.Monad.State
-import           Data.Aeson (encode)
-import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Map as Map
+import           GHC.Conc (unsafeIOToSTM)
 import qualified Player
 import qualified World
 import qualified WorldView
-
-oneSecond :: Int
-oneSecond = 1000000
-
-drainTChan :: TChan a -> STM [a]
-drainTChan chan = do
-  empty <- isEmptyTChan chan
-  if empty
-  then return []
-  else do
-    x <- readTChan chan
-    xs <- drainTChan chan
-    return (x:xs)
-
-tell :: TMVar B.ByteString -> World.World -> STM ()
-tell sender world = putTMVar sender $ encode $ WorldView.fromWorld world
+import           Types
 
 initWorld :: World.WorldState ()
 initWorld = World.spawn Player.empty
@@ -36,16 +20,22 @@ tick = do
   World.move uuid
   World.tick
 
-run :: TChan (TMVar B.ByteString) -> IO ()
+requestHandler :: World.World -> Request -> STM ()
+requestHandler world (Request sender action) = do
+  unsafeIOToSTM $ print action
+  sender `tell` message
+  where message = WorldViewMessage $ WorldView.fromWorld $ world
+
+run :: RequestChan -> IO ()
 run chan = do
   world <- execStateT initWorld World.empty
   run' chan world
 
-run' :: TChan (TMVar B.ByteString) -> World.World -> IO ()
+run' :: RequestChan -> World.World -> IO ()
 run' chan world = do
   atomically $ do
-    senders <- drainTChan chan
-    mapM (\sender -> tell sender world) senders
+    requests <- drainTChan chan
+    mapM (requestHandler world) requests
   world' <- execStateT tick world
   threadDelay oneSecond
   run' chan world'
