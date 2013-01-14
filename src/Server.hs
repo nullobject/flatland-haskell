@@ -2,58 +2,37 @@
 
 module Server where
 
-import           Blaze.ByteString.Builder (Builder)
-import           Blaze.ByteString.Builder.Char.Utf8 (fromString)
-import           Control.Applicative
-import           Control.Concurrent (threadDelay)
-import           Control.Monad.State (liftIO)
+import           Control.Concurrent.STM (TChan)
+import           Control.Monad.Trans (liftIO)
 import           Data.Aeson (encode)
 import           Data.ByteString.UTF8 (toString)
-import           Data.Enumerator.List (repeatM)
 import qualified Data.Maybe as Maybe
 import           Data.UUID (UUID)
 import qualified Data.UUID as UUID
-import           Snap.Core hiding (Request)
-import           Snap.Http.Server
-import           Snap.Util.FileServe
-import           System.Random
+import           Network.HTTP.Types (status200)
+import           Network.Wai
+import qualified Network.Wai.Handler.Warp as Warp
 import           Types
 
-getPlayer :: Snap (Maybe UUID)
-getPlayer = do
-  playerHeader <- getsRequest $ getHeader "X-Player"
-  return $ UUID.fromString $ toString $ Maybe.fromJust playerHeader
+getPlayer :: Request -> IO (Maybe UUID)
+getPlayer request = do
+  let player = lookup "X-Player" $ requestHeaders request
+  return $ UUID.fromString $ toString $ Maybe.fromJust player
 
 -- FIXME: Error unless the player is given.
-actionHandler :: RequestChan -> Snap ()
-actionHandler chan = do
-  uuid <- getPlayer
-  respond chan $ Maybe.fromJust uuid
-
-respond :: RequestChan -> UUID -> Snap ()
-respond chan uuid = do
-  let message = ActionMessage Move uuid
+actionHandler :: TChan GameRequest -> Application
+actionHandler chan request = do
+  uuid <- liftIO $ getPlayer request
+  let message = ActionMessage Move $ Maybe.fromJust uuid
   WorldViewMessage worldView <- liftIO $ chan `ask` message
-  writeLBS $ encode $ worldView
+  return $ responseLBS status200 [("Content-Type", "application/json")] $ encode $ worldView
 
-streamHandler :: (forall a . Enumerator Builder IO a) -> Snap ()
-streamHandler enum = modifyResponse $
-  setBufferingMode False .
-  setResponseBody  enum .
-  setContentType   "text/event-stream" .
-  setHeader        "Access-Control-Allow-Origin" "*" .
-  setHeader        "Cache-Control" "no-cache" .
-  setHeader        "Connection" "Keep-Alive"
+application :: TChan GameRequest -> Application
+application chan request =
+  case pathInfo request of
+    []         -> return $ ResponseFile status200 [("Content-Type", "text/html")] "static/index.html" Nothing
+    ["action"] -> actionHandler chan request
+    _          -> error "unexpected pathInfo"
 
-streamEnumerator :: Enumerator Builder IO a
-streamEnumerator = repeatM $ do
-  n <- liftIO $ threadDelay oneSecond >> randomIO :: IO Int
-  return $ fromString $ "data: " ++ (show n) ++ "\n\n"
-
-site :: RequestChan -> Snap ()
-site chan = route [ ("action", actionHandler chan)
-                  , ("stream", streamHandler streamEnumerator) ]
-  <|> dir "static" (serveDirectory "www")
-
-run :: RequestChan -> IO ()
-run chan = quickHttpServe $ site chan
+run :: TChan GameRequest -> IO ()
+run chan = Warp.run 8000 $ application chan

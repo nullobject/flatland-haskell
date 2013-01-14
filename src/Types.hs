@@ -4,18 +4,13 @@ import Control.Concurrent.STM
 import Data.UUID (UUID)
 import WorldView (WorldView)
 
-type Sender = TMVar Message
-
 data Action = Idle | Attack | Move | Turn Int deriving (Show)
-
-data Request = Request Sender Message
-
-type RequestChan = TChan Request
 
 data Message = ActionMessage Action UUID | WorldViewMessage WorldView deriving (Show)
 
-oneSecond :: Int
-oneSecond = 1000000
+type Reply = TMVar Message
+
+data GameRequest = GameRequest Reply Message
 
 -- Drains the channel and returns the messages.
 drainTChan :: TChan a -> STM [a]
@@ -28,13 +23,16 @@ drainTChan chan = do
       xs <- drainTChan chan
       return (x:xs)
 
--- Sends a message to a sender.
-tell :: Sender -> Message -> IO ()
+-- Replies to a message.
+tell :: Reply -> Message -> IO ()
 tell sender message = atomically $ putTMVar sender message
 
 -- Writes a message to the channel and waits for a response.
-ask :: RequestChan -> Message -> IO Message
+ask :: TChan GameRequest -> Message -> IO Message
 ask chan message = do
   sender <- newEmptyTMVarIO
-  atomically $ writeTChan chan $ Request sender message
+  atomically $ writeTChan chan $ GameRequest sender message
   atomically $ takeTMVar sender
+
+drain :: TChan GameRequest -> IO [GameRequest]
+drain chan = atomically $ drainTChan chan

@@ -22,15 +22,13 @@ executable medusa
   build-depends:
     aeson,
     base ==4.5.*,
-    blaze-builder,
-    bytestring,
     containers,
-    enumerator,
     ghc-prim,
+    http-types,
     mtl,
     random,
-    snap-core,
-    snap-server,
     stm,
     utf8-string,
-    uuid
+    uuid,
+    warp,
+    wai

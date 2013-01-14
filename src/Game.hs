@@ -1,7 +1,7 @@
 module Game where
 
 import           Control.Concurrent (threadDelay)
-import           Control.Concurrent.STM (atomically)
+import           Control.Concurrent.STM (TChan)
 import           Control.Monad.State
 import           Data.UUID (UUID)
 import           Data.UUID.V4 (nextRandom)
@@ -10,6 +10,9 @@ import           World (World, WorldState)
 import qualified World
 import qualified WorldView
 import           Types
+
+oneSecond :: Int
+oneSecond = 1000000
 
 initWorld :: WorldState ()
 initWorld = do
@@ -20,21 +23,21 @@ execute :: Action -> UUID -> WorldState ()
 execute Move uuid = World.move uuid
 execute _ _ = return ()
 
-handleRequest :: World -> Request -> IO World
-handleRequest world (Request sender (ActionMessage action uuid)) = do
+handleRequest :: World -> GameRequest -> IO World
+handleRequest world (GameRequest sender (ActionMessage action uuid)) = do
   putStrLn $ show action ++ " (" ++ show uuid ++ ")"
   world' <- execStateT (execute action uuid) world
   let message = WorldViewMessage $ WorldView.fromWorld $ world'
   sender `tell` message
   return world'
 
-tick :: RequestChan -> World -> IO ()
+tick :: TChan GameRequest -> World -> IO ()
 tick chan world = do
   threadDelay oneSecond
-  requests <- atomically $ drainTChan chan
+  requests <- drain chan
   world' <- execStateT World.tick world
   world'' <- foldM handleRequest world' requests
   tick chan world''
 
-run :: RequestChan -> IO ()
+run :: TChan GameRequest -> IO ()
 run chan = execStateT initWorld World.empty >>= tick chan
