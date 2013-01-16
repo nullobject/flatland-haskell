@@ -49,6 +49,7 @@ tick = do
                      execStateT World.tick
   put $ game {world = world'}
 
+-- Runs the game with the given request channel.
 run :: TChan GameRequest -> IO ()
 run chan = do
   world <- execStateT initWorld World.empty

@@ -51,6 +51,7 @@ route request =
     ["action"] -> actionHandler request
     _          -> error "unexpected pathInfo"
 
+-- Runs the server with the given request channel.
 run :: TChan GameRequest -> IO ()
 run chan = Warp.run 8000 app
   where app request = evalStateT (route request) $ Server chan
