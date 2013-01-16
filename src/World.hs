@@ -4,7 +4,6 @@ import           Control.Monad.State
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.UUID (UUID)
-import qualified Data.UUID.V4 as UUID
 import           Player (Player)
 import qualified Player
 
@@ -38,12 +37,6 @@ addPlayer player world = world {players = players'}
   where
     uuid = Player.id player
     players' = Map.insert uuid player $ players world
-
--- Initialises the world.
-initWorld :: WorldState ()
-initWorld = do
-  uuid <- liftIO $ UUID.nextRandom
-  World.spawn $ Player.empty uuid
 
 -- Ticks the world.
 tick :: WorldState ()

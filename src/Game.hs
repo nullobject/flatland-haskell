@@ -5,6 +5,7 @@ import           Control.Concurrent.STM (TChan)
 import           Control.Monad (forever)
 import           Control.Monad.State
 import           Data.UUID (UUID)
+import qualified Data.UUID.V4 as UUID
 import qualified Player
 import           World (World, WorldState)
 import qualified World
@@ -25,6 +26,9 @@ oneSecond = 1000000
 executeRequest :: GameRequest -> WorldState ()
 executeRequest (GameRequest sender (ActionMessage action uuid)) = executeAction action uuid
   where
+    executeAction Idle uuid = do
+      uuid <- liftIO $ UUID.nextRandom
+      World.spawn $ Player.empty uuid
     executeAction Move uuid = World.move uuid
     executeAction _ _ = return ()
 
@@ -64,7 +68,5 @@ tick = do
 
 -- Runs the game with the given request channel.
 run :: TChan GameRequest -> IO ()
-run chan = execStateT World.initWorld World.empty >>=
-           loop . Game chan >>
-           return ()
+run chan = loop (Game chan World.empty) >> return ()
   where loop = execStateT $ forever $ tick
