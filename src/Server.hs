@@ -3,11 +3,11 @@
 module Server where
 
 import           Control.Concurrent.STM (TChan)
-import           Control.Monad.Trans (liftIO)
-import           Control.Monad.Trans (liftIO)
+import           Control.Monad.State (evalStateT, get, liftIO, StateT)
 import           Data.Aeson (encode, ToJSON)
 import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
+import           Data.Conduit (ResourceT)
 import qualified Data.Maybe as Maybe
 import           Data.UUID (UUID)
 import qualified Data.UUID as UUID
@@ -16,33 +16,41 @@ import           Network.Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import           Types
 
-returnSuccess :: (Monad m, ToJSON a) => a -> m Response
-returnSuccess value = return $ responseLBS status200 [("Content-Type", "application/json")] $ encode $ value
+data Server = Server {
+  chan :: TChan GameRequest
+}
 
-returnFailure :: Monad m => LBS.ByteString -> m Response
-returnFailure value = return $ responseLBS status400 [("Content-Type", "text/plain")] value
+type ServerState = StateT Server (ResourceT IO)
 
-getPlayer :: Request -> IO (Maybe UUID)
+responseFailure :: LBS.ByteString -> Response
+responseFailure value = responseLBS status400 [("Content-Type", "text/plain")] value
+
+responseSuccess :: (ToJSON a) => a -> Response
+responseSuccess value = responseLBS status200 [("Content-Type", "application/json")] $ encode $ value
+
+getPlayer :: Request -> ServerState (Maybe UUID)
 getPlayer request = do
   let player = lookup "X-Player" $ requestHeaders request
   return $ player >>= UUID.fromString . unpack
 
-actionHandler :: TChan GameRequest -> Application
-actionHandler chan request = do
-  liftIO $ getPlayer request >>= Maybe.maybe fail ok
+actionHandler :: Request -> ServerState Response
+actionHandler request = do
+  getPlayer request >>= Maybe.maybe failure success
   where
-    ok uuid = do
+    failure = return $ responseFailure "Missing header X-Player"
+    success uuid = do
+      server <- get
       let message = ActionMessage Move uuid
-      WorldViewMessage worldView <- liftIO $ chan `ask` message
-      returnSuccess worldView
-    fail = returnFailure "Missing header X-Player"
+      WorldViewMessage worldView <- liftIO $ chan server `ask` message
+      return $ responseSuccess worldView
 
-application :: TChan GameRequest -> Application
-application chan request =
+route :: Request -> ServerState Response
+route request =
   case pathInfo request of
     []         -> return $ ResponseFile status200 [("Content-Type", "text/html")] "static/index.html" Nothing
-    ["action"] -> actionHandler chan request
+    ["action"] -> actionHandler request
     _          -> error "unexpected pathInfo"
 
 run :: TChan GameRequest -> IO ()
-run chan = Warp.run 8000 $ application chan
+run chan = Warp.run 8000 app
+  where app request = evalStateT (route request) $ Server chan
