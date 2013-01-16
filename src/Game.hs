@@ -2,7 +2,8 @@ module Game where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (TChan)
-import           Control.Monad.State
+import           Control.Monad (forever)
+import           Control.Monad.State (execStateT, foldM, get, liftIO, put, StateT)
 import           Data.UUID (UUID)
 import           Data.UUID.V4 (nextRandom)
 import qualified Player
@@ -10,6 +11,13 @@ import           World (World, WorldState)
 import qualified World
 import qualified WorldView
 import           Types
+
+data Game = Game {
+  chan  :: TChan GameRequest,
+  world :: World
+}
+
+type GameState = StateT Game IO
 
 oneSecond :: Int
 oneSecond = 1000000
@@ -31,13 +39,18 @@ handleRequest world (GameRequest sender (ActionMessage action uuid)) = do
   sender `tell` message
   return world'
 
-tick :: TChan GameRequest -> World -> IO ()
-tick chan world = do
-  threadDelay oneSecond
-  requests <- drain chan
-  world' <- execStateT World.tick world
-  world'' <- foldM handleRequest world' requests
-  tick chan world''
+-- Ticks the game.
+tick :: GameState ()
+tick = do
+  game <- get
+  world' <- liftIO $ threadDelay oneSecond >>
+                     drain (chan game) >>=
+                     foldM handleRequest (world game) >>=
+                     execStateT World.tick
+  put $ game {world = world'}
 
 run :: TChan GameRequest -> IO ()
-run chan = execStateT initWorld World.empty >>= tick chan
+run chan = do
+  world <- execStateT initWorld World.empty
+  loop $ Game chan world
+  where loop game = execStateT (forever $ tick) game >> return ()
