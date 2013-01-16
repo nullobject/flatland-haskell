@@ -3,7 +3,7 @@
 module Server where
 
 import           Control.Concurrent.STM (TChan)
-import           Control.Monad.State (evalStateT, get, liftIO, StateT)
+import           Control.Monad.State
 import           Data.Aeson (encode, ToJSON)
 import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
@@ -54,4 +54,4 @@ route request =
 -- Runs the server with the given request channel.
 run :: TChan GameRequest -> IO ()
 run chan = Warp.run 8000 app
-  where app request = evalStateT (route request) $ Server chan
+  where app request = evalStateT (route request) (Server chan)

@@ -16,9 +16,9 @@ data GameRequest = GameRequest Reply Message
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
   empty <- isEmptyTChan chan
-  if empty then return [] else drain
+  if empty then return [] else drainTChan'
   where
-    drain = do
+    drainTChan' = do
       x <- readTChan chan
       xs <- drainTChan chan
       return (x:xs)
