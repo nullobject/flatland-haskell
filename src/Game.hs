@@ -31,23 +31,49 @@ execute :: Action -> UUID -> WorldState ()
 execute Move uuid = World.move uuid
 execute _ _ = return ()
 
-handleRequest :: World -> GameRequest -> IO World
-handleRequest world (GameRequest sender (ActionMessage action uuid)) = do
-  putStrLn $ show action ++ " (" ++ show uuid ++ ")"
-  world' <- execStateT (execute action uuid) world
-  let message = WorldViewMessage $ WorldView.fromWorld $ world'
+transformRequest :: GameRequest -> WorldState ()
+transformRequest (GameRequest sender (ActionMessage action uuid)) = execute action uuid
+
+transformRequests :: [GameRequest] -> [WorldState ()]
+transformRequests requests = map transformRequest requests
+
+replyToRequest :: Message -> GameRequest -> IO ()
+replyToRequest message (GameRequest sender _) = do
   sender `tell` message
-  return world'
+
+replyToRequests :: [GameRequest] -> GameState ()
+replyToRequests requests = do
+  game <- get
+  let message = WorldViewMessage $ WorldView.fromWorld $ world game
+  liftIO $ mapM (replyToRequest message) requests
+  return ()
+
+applyRequests :: [GameRequest] -> GameState ()
+applyRequests requests = do
+  game <- get
+  let actions = sequence $ transformRequests requests
+  world' <- liftIO $ execStateT actions $ world game
+  put $ game {world = world'}
+
+tickWorld :: GameState ()
+tickWorld = do
+  game <- get
+  world' <- liftIO $ execStateT World.tick $ world game
+  put $ game {world = world'}
+
+getRequests :: GameState ([GameRequest])
+getRequests = do
+  game <- get
+  liftIO $ drain $ chan game
 
 -- Ticks the game.
 tick :: GameState ()
 tick = do
-  game <- get
-  world' <- liftIO $ threadDelay oneSecond >>
-                     drain (chan game) >>=
-                     foldM handleRequest (world game) >>=
-                     execStateT World.tick
-  put $ game {world = world'}
+  liftIO $ threadDelay oneSecond
+  requests <- getRequests
+  applyRequests requests
+  tickWorld
+  replyToRequests requests
 
 -- Runs the game with the given request channel.
 run :: TChan GameRequest -> IO ()
