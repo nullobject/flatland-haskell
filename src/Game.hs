@@ -6,7 +6,7 @@ import           Control.Monad (forever)
 import           Control.Monad.State
 import           Data.UUID (UUID)
 import qualified Data.UUID.V4 as UUID
-import qualified Player
+import qualified Entity
 import           World (World, WorldState)
 import qualified World
 import qualified WorldView
@@ -23,13 +23,13 @@ oneSecond :: Int
 oneSecond = 1000000
 
 -- Executes the request on the world.
--- TODO: only spawn a player if they aren't already in the world.
+-- TODO: only spawn a entity if they aren't already in the world.
 executeRequest :: Request -> WorldState ()
 executeRequest (Request sender (ActionMessage action uuid)) = executeAction action uuid
   where
     executeAction Idle uuid = do
       uuid <- liftIO $ UUID.nextRandom
-      World.spawn $ Player.empty uuid
+      World.spawn $ Entity.empty uuid
     executeAction Move uuid = World.move uuid
     executeAction _ _ = return ()
 

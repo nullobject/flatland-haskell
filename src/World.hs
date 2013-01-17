@@ -4,12 +4,12 @@ import           Control.Monad.State
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.UUID (UUID)
-import           Player (Player)
-import qualified Player
+import           Entity (Entity)
+import qualified Entity
 
 data World = World {
-  players :: Map UUID Player,
-  age     :: Int
+  entities :: Map UUID Entity,
+  age      :: Int
 } deriving (Show)
 
 type WorldState = StateT World IO
@@ -17,8 +17,8 @@ type WorldState = StateT World IO
 -- Returns a new world.
 empty :: World
 empty = World {
-  players = Map.empty,
-  age     = 0
+  entities = Map.empty,
+  age      = 0
 }
 
 -- Increments the age of the world.
@@ -26,29 +26,29 @@ incrementAge :: World -> World
 incrementAge world = world {age = age'}
   where age' = age world + 1
 
--- Ticks the players in the world.
-tickPlayers :: World -> World
-tickPlayers world = world {players = players'}
-  where players' = Map.map Player.tick $ players world
+-- Ticks the entities in the world.
+tickEntities :: World -> World
+tickEntities world = world {entities = entities'}
+  where entities' = Map.map Entity.tick $ entities world
 
--- Adds a player to the world.
-addPlayer :: Player -> World -> World
-addPlayer player world = world {players = players'}
+-- Adds an entity to the world.
+addEntity :: Entity -> World -> World
+addEntity entity world = world {entities = entities'}
   where
-    uuid = Player.id player
-    players' = Map.insert uuid player $ players world
+    uuid = Entity.id entity
+    entities' = Map.insert uuid entity $ entities world
 
 -- Ticks the world.
 tick :: WorldState ()
-tick = modify $ incrementAge . tickPlayers
+tick = modify $ incrementAge . tickEntities
 
--- Spawns a player in the world.
-spawn :: Player -> WorldState ()
-spawn player = modify $ addPlayer player
+-- Spawns an entity in the world.
+spawn :: Entity -> WorldState ()
+spawn entity = modify $ addEntity entity
 
--- Moves a player in the world.
+-- Moves an entity in the world.
 move :: UUID -> WorldState ()
 move uuid = do
   world <- get
-  let players' = Map.adjust Player.move uuid $ players world
-  put world {players = players'}
+  let entities' = Map.adjust Entity.move uuid $ entities world
+  put world {entities = entities'}

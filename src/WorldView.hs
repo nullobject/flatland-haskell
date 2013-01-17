@@ -5,12 +5,12 @@ module WorldView where
 import Data.Aeson (ToJSON)
 import Data.Map (elems)
 import GHC.Generics (Generic)
-import Player (Player)
+import Entity (Entity)
 import World (World)
 import qualified World
 
 data WorldView = WorldView {
-  players :: [Player],
+  entities :: [Entity],
   age     :: Int
 } deriving (Generic, Show)
 
@@ -19,6 +19,6 @@ instance ToJSON WorldView
 -- Returns a new world view for the given world.
 fromWorld :: World -> WorldView
 fromWorld world = WorldView {
-  players = elems $ World.players world,
-  age     = World.age world
+  entities = elems $ World.entities world,
+  age      = World.age world
 }

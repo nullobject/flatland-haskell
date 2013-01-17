@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Player where
+module Entity where
 
 import Data.Aeson (toJSON, ToJSON)
 import Data.Char (toLower)
@@ -19,7 +19,7 @@ instance ToJSON StateName where
 instance ToJSON UUID where
   toJSON uuid = toJSON $ show uuid
 
-data Player = Player {
+data Entity = Entity {
   id       :: UUID,
   state    :: StateName,
   health   :: Health,
@@ -27,28 +27,28 @@ data Player = Player {
   age      :: Age
 } deriving (Generic, Show)
 
-instance ToJSON Player
+instance ToJSON Entity
 
--- Returns a new player.
-empty :: UUID -> Player
-empty uuid = Player {
-  Player.id = uuid,
+-- Returns a new entity.
+empty :: UUID -> Entity
+empty uuid = Entity {
+  Entity.id = uuid,
   state     = Idle,
   health    = 100,
   position  = (0, 0),
   age       = 0
 }
 
--- Increments the age of the player.
-incrementAge :: Player -> Player
-incrementAge player = player {age = age'}
-  where age' = age player + 1
+-- Increments the age of the entity.
+incrementAge :: Entity -> Entity
+incrementAge entity = entity {age = age'}
+  where age' = age entity + 1
 
--- Ticks the player.
-tick :: Player -> Player
-tick player = incrementAge player
+-- Ticks the entity.
+tick :: Entity -> Entity
+tick entity = incrementAge entity
 
--- Moves the player.
-move :: Player -> Player
-move player = player {position = (x + 1, y + 1)}
-  where (x, y) = position player
+-- Moves the entity.
+move :: Entity -> Entity
+move entity = entity {position = (x + 1, y + 1)}
+  where (x, y) = position entity
