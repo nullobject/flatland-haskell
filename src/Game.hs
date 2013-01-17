@@ -13,7 +13,7 @@ import qualified WorldView
 import           Types
 
 data Game = Game {
-  chan  :: TChan GameRequest,
+  chan  :: TChan Request,
   world :: World
 }
 
@@ -23,8 +23,9 @@ oneSecond :: Int
 oneSecond = 1000000
 
 -- Executes the request on the world.
-executeRequest :: GameRequest -> WorldState ()
-executeRequest (GameRequest sender (ActionMessage action uuid)) = executeAction action uuid
+-- TODO: only spawn a player if they aren't already in the world.
+executeRequest :: Request -> WorldState ()
+executeRequest (Request sender (ActionMessage action uuid)) = executeAction action uuid
   where
     executeAction Idle uuid = do
       uuid <- liftIO $ UUID.nextRandom
@@ -33,7 +34,7 @@ executeRequest (GameRequest sender (ActionMessage action uuid)) = executeAction 
     executeAction _ _ = return ()
 
 -- Executes the requests on the world.
-executeRequests :: [GameRequest] -> GameState ()
+executeRequests :: [Request] -> GameState ()
 executeRequests requests = do
   game <- get
   let actions = sequence $ map executeRequest requests
@@ -41,13 +42,13 @@ executeRequests requests = do
   put $ game {world = world'}
 
 -- Replies to the requests with the world view.
-replyToRequests :: [GameRequest] -> GameState ()
+replyToRequests :: [Request] -> GameState ()
 replyToRequests requests = do
   game <- get
   let message = WorldViewMessage $ WorldView.fromWorld $ world game
   liftIO $ mapM (replyToRequest message) requests
   return ()
-  where replyToRequest message (GameRequest sender _) = sender `tell` message
+  where replyToRequest message (Request sender _) = sender `tell` message
 
 -- Ticks the world.
 tickWorld :: GameState ()
@@ -67,6 +68,6 @@ tick = do
   where getRequests = liftM chan get >>= liftIO . drain
 
 -- Runs the game with the given request channel.
-run :: TChan GameRequest -> IO ()
+run :: TChan Request -> IO ()
 run chan = loop (Game chan World.empty) >> return ()
   where loop = execStateT $ forever $ tick

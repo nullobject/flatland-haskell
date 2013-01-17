@@ -8,11 +8,10 @@ data Action = Idle | Attack | Move | Turn Int deriving (Show)
 
 data Message = ActionMessage Action UUID | WorldViewMessage WorldView deriving (Show)
 
-type Reply = TMVar Message
+data Request = Request Response Message
 
-data GameRequest = GameRequest Reply Message
+type Response = TMVar Message
 
--- Drains the channel and returns the messages.
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
   empty <- isEmptyTChan chan
@@ -23,16 +22,17 @@ drainTChan chan = do
       xs <- drainTChan chan
       return (x:xs)
 
+-- Drains the channel and returns the messages.
+drain :: TChan Request -> IO [Request]
+drain chan = atomically $ drainTChan chan
+
 -- Replies to a message.
-tell :: Reply -> Message -> IO ()
+tell :: Response -> Message -> IO ()
 tell sender message = atomically $ putTMVar sender message
 
 -- Writes a message to the channel and waits for a response.
-ask :: TChan GameRequest -> Message -> IO Message
+ask :: TChan Request -> Message -> IO Message
 ask chan message = do
   sender <- newEmptyTMVarIO
-  atomically $ writeTChan chan $ GameRequest sender message
+  atomically $ writeTChan chan $ Request sender message
   atomically $ takeTMVar sender
-
-drain :: TChan GameRequest -> IO [GameRequest]
-drain chan = atomically $ drainTChan chan
