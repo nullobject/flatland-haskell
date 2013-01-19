@@ -12,19 +12,19 @@ import qualified World
 import qualified WorldView
 import           Types
 
-data Game = Game {
+data GameState = GameState {
   chan  :: TChan Request,
-  world :: World
+  world :: WorldState
 }
 
-type GameState = StateT Game IO
+type Game = StateT GameState IO
 
 oneSecond :: Int
 oneSecond = 1000000
 
 -- Executes the request on the world.
 -- TODO: only spawn a entity if they aren't already in the world.
-executeRequest :: Request -> WorldState ()
+executeRequest :: Request -> World ()
 executeRequest (Request sender (ActionMessage action uuid)) = executeAction action uuid
   where
     executeAction Idle uuid = do
@@ -34,7 +34,7 @@ executeRequest (Request sender (ActionMessage action uuid)) = executeAction acti
     executeAction _ _ = return ()
 
 -- Executes the requests on the world.
-executeRequests :: [Request] -> GameState ()
+executeRequests :: [Request] -> Game ()
 executeRequests requests = do
   game <- get
   let actions = sequence $ map executeRequest requests
@@ -42,7 +42,7 @@ executeRequests requests = do
   put $ game {world = world'}
 
 -- Replies to the requests with the world view.
-replyToRequests :: [Request] -> GameState ()
+replyToRequests :: [Request] -> Game ()
 replyToRequests requests = do
   game <- get
   let message = WorldViewMessage $ WorldView.fromWorld $ world game
@@ -51,14 +51,14 @@ replyToRequests requests = do
   where replyToRequest message (Request sender _) = sender `tell` message
 
 -- Ticks the world.
-tickWorld :: GameState ()
+tickWorld :: Game ()
 tickWorld = do
   game <- get
   world' <- liftIO $ execStateT World.tick $ world game
   put $ game {world = world'}
 
 -- Ticks the game.
-tick :: GameState ()
+tick :: Game ()
 tick = do
   liftIO $ threadDelay oneSecond
   requests <- getRequests
@@ -69,5 +69,5 @@ tick = do
 
 -- Runs the game with the given request channel.
 run :: TChan Request -> IO ()
-run chan = loop (Game chan World.empty) >> return ()
+run chan = loop (GameState chan World.empty) >> return ()
   where loop = execStateT $ forever $ tick

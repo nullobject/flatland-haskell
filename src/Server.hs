@@ -16,11 +16,11 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import           Types
 
-data Server = Server {
+data ServerState = ServerState {
   chan :: TChan Request
 }
 
-type ServerState = StateT Server (ResourceT IO)
+type Server = StateT ServerState (ResourceT IO)
 
 responseFailure :: LBS.ByteString -> Wai.Response
 responseFailure value = Wai.responseLBS status400 [("Content-Type", "text/plain")] value
@@ -28,13 +28,13 @@ responseFailure value = Wai.responseLBS status400 [("Content-Type", "text/plain"
 responseSuccess :: (ToJSON a) => a -> Wai.Response
 responseSuccess value = Wai.responseLBS status200 [("Content-Type", "application/json")] $ encode $ value
 
-getPlayer :: Wai.Request -> ServerState (Maybe UUID)
+getPlayer :: Wai.Request -> Server (Maybe UUID)
 getPlayer request = do
   let player = lookup "X-Player" $ Wai.requestHeaders request
   return $ player >>= UUID.fromString . unpack
 
 -- TODO: Parse the different messages.
-actionHandler :: Wai.Request -> ServerState Wai.Response
+actionHandler :: Wai.Request -> Server Wai.Response
 actionHandler request = do
   getPlayer request >>= Maybe.maybe failure success
   where
@@ -45,7 +45,7 @@ actionHandler request = do
       WorldViewMessage worldView <- liftIO $ chan server `ask` message
       return $ responseSuccess worldView
 
-route :: Wai.Request -> ServerState Wai.Response
+route :: Wai.Request -> Server Wai.Response
 route request =
   case Wai.pathInfo request of
     []         -> return $ Wai.ResponseFile status200 [("Content-Type", "text/html")] "static/index.html" Nothing
@@ -55,4 +55,4 @@ route request =
 -- Runs the server with the given request channel.
 run :: TChan Request -> IO ()
 run chan = Warp.run 8000 app
-  where app request = evalStateT (route request) (Server chan)
+  where app request = evalStateT (route request) (ServerState chan)

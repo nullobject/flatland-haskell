@@ -6,7 +6,7 @@ import Data.Aeson (ToJSON)
 import Data.Map (elems)
 import GHC.Generics (Generic)
 import Entity (Entity)
-import World (World)
+import World (WorldState)
 import qualified World
 
 data WorldView = WorldView {
@@ -17,7 +17,7 @@ data WorldView = WorldView {
 instance ToJSON WorldView
 
 -- Returns a new world view for the given world.
-fromWorld :: World -> WorldView
+fromWorld :: WorldState -> WorldView
 fromWorld world = WorldView {
   entities = elems $ World.entities world,
   age      = World.age world
