@@ -28,7 +28,7 @@ executeRequest :: Request -> World ()
 executeRequest (Request sender (ActionMessage action uuid)) = executeAction action uuid
   where
     executeAction Idle uuid = do
-      uuid <- liftIO $ UUID.nextRandom
+      uuid <- liftIO UUID.nextRandom
       World.spawn $ Entity.empty uuid
     executeAction Move uuid = World.move uuid
     executeAction _ _ = return ()
