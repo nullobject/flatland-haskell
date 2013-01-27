@@ -37,3 +37,18 @@ executable medusa
     uuid,
     wai,
     warp
+
+test-suite hunit
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src, test
+  main-is: Test.hs
+  build-depends:
+    aeson,
+    base,
+    containers,
+    ghc-prim,
+    mtl,
+    test-framework,
+    test-framework-hunit,
+    uuid,
+    HUnit
