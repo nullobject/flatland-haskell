@@ -35,6 +35,7 @@ executable medusa
     random,
     stm,
     uuid,
+    vector-space,
     wai,
     warp
 
