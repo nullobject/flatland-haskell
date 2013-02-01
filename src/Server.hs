@@ -4,6 +4,7 @@ module Server where
 
 import           Control.Concurrent.STM (TChan)
 import           Control.Monad.State
+import           Core
 import           Data.Aeson (encode, ToJSON)
 import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
@@ -14,7 +15,6 @@ import qualified Data.UUID as UUID
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import           Types
 
 data ServerState = ServerState {
   chan :: TChan Request

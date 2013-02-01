@@ -1,4 +1,4 @@
-module Types where
+module Core where
 
 import Control.Concurrent.STM
 import Data.UUID (UUID)

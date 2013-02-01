@@ -4,13 +4,13 @@ import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (TChan)
 import           Control.Monad (forever)
 import           Control.Monad.State
+import           Core
 import           Data.UUID (UUID)
 import qualified Data.UUID.V4 as UUID
 import qualified Entity
 import           World (World, WorldState)
 import qualified World
 import qualified WorldView
-import           Types
 
 data GameState = GameState {
   chan  :: TChan Request,
