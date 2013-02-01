@@ -2,7 +2,7 @@
 
 module Entity where
 
-import Core (Identifier)
+import Core (Identifier, Vector)
 import Data.Aeson (toJSON, ToJSON)
 import Data.Char (toLower)
 import Data.UUID (UUID)
@@ -10,7 +10,6 @@ import GHC.Generics (Generic)
 
 type Age    = Int
 type Health = Int
-type Vector = (Int, Int)
 
 data StateName = Dead | Idle deriving (Eq, Generic, Show)
 

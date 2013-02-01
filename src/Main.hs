@@ -8,5 +8,5 @@ import qualified Server
 main :: IO ()
 main = do
   chan <- newTChanIO
-  forkIO $ Game.run chan
+  _ <- forkIO $ Game.run chan
   Server.run chan

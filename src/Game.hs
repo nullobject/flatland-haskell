@@ -2,10 +2,8 @@ module Game where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (TChan)
-import           Control.Monad (forever)
 import           Control.Monad.State
 import           Core (Action(..))
-import           Data.UUID (UUID)
 import qualified Data.UUID.V4 as UUID
 import qualified Entity
 import           Message
@@ -26,13 +24,13 @@ oneSecond = 1000000
 -- Executes the request on the world.
 -- TODO: only spawn a entity if they aren't already in the world.
 executeRequest :: Request -> World ()
-executeRequest (Request sender (ActionMessage action identifier)) = executeAction action identifier
+executeRequest (Request (ActionMessage action identifier) _) = executeAction action
   where
-    executeAction Idle identifier = do
-      identifier <- liftIO UUID.nextRandom
-      World.spawn $ Entity.empty identifier
-    executeAction Move identifier = World.move identifier
-    executeAction _ _ = return ()
+    executeAction Idle = do
+      identifier' <- liftIO UUID.nextRandom
+      World.spawn $ Entity.empty identifier'
+    executeAction Move = World.move identifier
+    executeAction _ = return ()
 
 -- Executes the requests on the world.
 executeRequests :: [Request] -> Game ()
@@ -47,9 +45,9 @@ replyToRequests :: [Request] -> Game ()
 replyToRequests requests = do
   game <- get
   let message = WorldViewMessage $ WorldView.fromWorld $ world game
-  liftIO $ mapM (replyToRequest message) requests
+  _ <- liftIO $ mapM (replyToRequest message) requests
   return ()
-  where replyToRequest message (Request sender _) = sender `tell` message
+  where replyToRequest message (Request _ sender) = sender `tell` message
 
 -- Ticks the world.
 tickWorld :: Game ()
@@ -70,5 +68,5 @@ tick = do
 
 -- Runs the game with the given request channel.
 run :: TChan Request -> IO ()
-run chan = loop (GameState chan World.empty) >> return ()
+run chan' = loop (GameState chan' World.empty) >> return ()
   where loop = execStateT $ forever $ tick

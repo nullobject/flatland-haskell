@@ -10,7 +10,6 @@ import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
 import           Data.Conduit (ResourceT)
 import qualified Data.Maybe as Maybe
-import           Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import           Message
 import           Network.HTTP.Types (status200, status400)
@@ -55,5 +54,5 @@ route request =
 
 -- Runs the server with the given request channel.
 run :: TChan Request -> IO ()
-run chan = Warp.run 8000 app
-  where app request = evalStateT (route request) (ServerState chan)
+run chan' = Warp.run 8000 app
+  where app request = evalStateT (route request) (ServerState chan')

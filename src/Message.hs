@@ -4,7 +4,7 @@ import Control.Concurrent.STM
 import Core
 import WorldView
 
-data Request = Request Response Message
+data Request = Request Message Response
 
 type Response = TMVar Message
 
@@ -32,5 +32,5 @@ tell sender message = atomically $ putTMVar sender message
 ask :: TChan Request -> Message -> IO Message
 ask chan message = do
   sender <- newEmptyTMVarIO
-  atomically $ writeTChan chan $ Request sender message
+  atomically $ writeTChan chan $ Request message sender
   atomically $ takeTMVar sender
