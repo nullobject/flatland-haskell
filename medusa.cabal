@@ -32,6 +32,7 @@ executable medusa
     ghc-prim,
     http-types,
     mtl,
+    netwire,
     random,
     stm,
     uuid,
