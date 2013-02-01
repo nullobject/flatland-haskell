@@ -4,7 +4,7 @@ module Server where
 
 import           Control.Concurrent.STM (TChan)
 import           Control.Monad.State
-import           Core
+import           Core (Action(..), Identifier)
 import           Data.Aeson (encode, ToJSON)
 import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
@@ -12,6 +12,7 @@ import           Data.Conduit (ResourceT)
 import qualified Data.Maybe as Maybe
 import           Data.UUID (UUID)
 import qualified Data.UUID as UUID
+import           Message
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -28,7 +29,7 @@ responseFailure value = Wai.responseLBS status400 [("Content-Type", "text/plain"
 responseSuccess :: (ToJSON a) => a -> Wai.Response
 responseSuccess value = Wai.responseLBS status200 [("Content-Type", "application/json")] $ encode $ value
 
-getPlayer :: Wai.Request -> Server (Maybe UUID)
+getPlayer :: Wai.Request -> Server (Maybe Identifier)
 getPlayer request = do
   let player = lookup "X-Player" $ Wai.requestHeaders request
   return $ player >>= UUID.fromString . unpack
@@ -39,9 +40,9 @@ actionHandler request = do
   getPlayer request >>= Maybe.maybe failure success
   where
     failure = return $ responseFailure "Missing header X-Player"
-    success uuid = do
+    success identifier = do
       server <- get
-      let message = ActionMessage Idle uuid
+      let message = ActionMessage Idle identifier
       WorldViewMessage worldView <- liftIO $ chan server `ask` message
       return $ responseSuccess worldView
 

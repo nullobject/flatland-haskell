@@ -4,10 +4,11 @@ import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (TChan)
 import           Control.Monad (forever)
 import           Control.Monad.State
-import           Core
+import           Core (Action(..))
 import           Data.UUID (UUID)
 import qualified Data.UUID.V4 as UUID
 import qualified Entity
+import           Message
 import           World (World, WorldState)
 import qualified World
 import qualified WorldView
@@ -25,12 +26,12 @@ oneSecond = 1000000
 -- Executes the request on the world.
 -- TODO: only spawn a entity if they aren't already in the world.
 executeRequest :: Request -> World ()
-executeRequest (Request sender (ActionMessage action uuid)) = executeAction action uuid
+executeRequest (Request sender (ActionMessage action identifier)) = executeAction action identifier
   where
-    executeAction Idle uuid = do
-      uuid <- liftIO UUID.nextRandom
-      World.spawn $ Entity.empty uuid
-    executeAction Move uuid = World.move uuid
+    executeAction Idle identifier = do
+      identifier <- liftIO UUID.nextRandom
+      World.spawn $ Entity.empty identifier
+    executeAction Move identifier = World.move identifier
     executeAction _ _ = return ()
 
 -- Executes the requests on the world.

@@ -1,14 +1,14 @@
 module World where
 
 import           Control.Monad.State
+import           Core (Identifier)
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.UUID (UUID)
 import           Entity (Entity)
 import qualified Entity
 
 data WorldState = WorldState {
-  entities :: Map UUID Entity,
+  entities :: Map Identifier Entity,
   age      :: Int
 } deriving (Show)
 
@@ -35,8 +35,8 @@ tickEntities world = world {entities = entities'}
 addEntity :: Entity -> WorldState -> WorldState
 addEntity entity world = world {entities = entities'}
   where
-    uuid = Entity.id entity
-    entities' = Map.insert uuid entity $ entities world
+    identifier = Entity.id entity
+    entities' = Map.insert identifier entity $ entities world
 
 -- Ticks the world.
 tick :: World ()
@@ -47,8 +47,8 @@ spawn :: Entity -> World ()
 spawn entity = modify $ addEntity entity
 
 -- Moves an entity in the world.
-move :: UUID -> World ()
-move uuid = do
+move :: Identifier -> World ()
+move identifier = do
   world <- get
-  let entities' = Map.adjust Entity.move uuid $ entities world
+  let entities' = Map.adjust Entity.move identifier $ entities world
   put world {entities = entities'}

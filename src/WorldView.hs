@@ -2,11 +2,11 @@
 
 module WorldView where
 
-import Data.Aeson (ToJSON)
-import Data.Map (elems)
-import GHC.Generics (Generic)
-import Entity (Entity)
-import World (WorldState)
+import           Data.Aeson (ToJSON)
+import           Data.Map (elems)
+import           GHC.Generics (Generic)
+import           Entity (Entity)
+import           World (WorldState)
 import qualified World
 
 data WorldView = WorldView {

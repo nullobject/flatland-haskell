@@ -2,6 +2,7 @@
 
 module Entity where
 
+import Core (Identifier)
 import Data.Aeson (toJSON, ToJSON)
 import Data.Char (toLower)
 import Data.UUID (UUID)
@@ -20,7 +21,7 @@ instance ToJSON UUID where
   toJSON uuid = toJSON $ show uuid
 
 data Entity = Entity {
-  id       :: UUID,
+  id       :: Identifier,
   state    :: StateName,
   health   :: Health,
   position :: Vector,
@@ -30,9 +31,9 @@ data Entity = Entity {
 instance ToJSON Entity
 
 -- Returns a new entity.
-empty :: UUID -> Entity
-empty uuid = Entity {
-  Entity.id = uuid,
+empty :: Identifier -> Entity
+empty identifier = Entity {
+  Entity.id = identifier,
   state     = Idle,
   health    = 100,
   position  = (0, 0),
