@@ -3,7 +3,7 @@ module Game where
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.STM (TChan)
 import           Control.Monad.State
-import           Core (Action(..))
+import           Core
 import qualified Data.UUID.V4 as UUID
 import qualified Entity
 import           Message
@@ -28,7 +28,7 @@ executeRequest (Request (ActionMessage action identifier) _) = executeAction act
   where
     executeAction Idle = do
       identifier' <- liftIO UUID.nextRandom
-      World.spawn $ Entity.empty identifier'
+      World.spawn $ Entity.empty (Identifier identifier')
     executeAction Move = World.move identifier
     executeAction _ = return ()
 

@@ -5,7 +5,6 @@ module Entity where
 import Core (Identifier, Vector)
 import Data.Aeson (toJSON, ToJSON)
 import Data.Char (toLower)
-import Data.UUID (UUID)
 import GHC.Generics (Generic)
 
 type Age    = Int
@@ -15,9 +14,6 @@ data StateName = Dead | Idle deriving (Eq, Generic, Show)
 
 instance ToJSON StateName where
   toJSON s = toJSON $ map toLower $ show s
-
-instance ToJSON UUID where
-  toJSON uuid = toJSON $ show uuid
 
 data Entity = Entity {
   id       :: Identifier,

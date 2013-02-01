@@ -1,8 +1,12 @@
 module Core where
 
+import Data.Aeson (toJSON, ToJSON)
 import Data.UUID (UUID)
 
-type Identifier = UUID
+newtype Identifier = Identifier UUID deriving (Eq, Ord, Show)
+
+instance ToJSON Identifier where
+  toJSON identifier = toJSON $ show identifier
 
 data Action = Idle | Attack | Move | Turn Int deriving (Show)
 
