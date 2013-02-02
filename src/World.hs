@@ -1,9 +1,10 @@
 module World where
 
 import           Control.Wire
-import           Core (Age, Identifier)
+import           Core
 import           Entity (Entity)
 import qualified Entity
+import           Identifier
 import           Message (Message)
 import           Prelude hiding ((.), id)
 

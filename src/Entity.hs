@@ -3,7 +3,7 @@
 module Entity where
 
 import           Control.Wire
-import           Core (zeroVector, Action, Age, Health, Identifier, Vector)
+import           Core (zeroVector, Action, Age, Health, Vector)
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
 import           Data.Map (Map)
@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 import qualified Data.Traversable as Traversable
 import qualified Data.Key as Key
 import           GHC.Generics (Generic)
+import           Identifier
 import           Message (Message)
 import           Prelude hiding ((.), id)
 

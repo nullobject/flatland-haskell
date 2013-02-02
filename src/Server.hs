@@ -10,6 +10,7 @@ import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
 import           Data.Conduit (ResourceT)
 import qualified Data.Maybe as Maybe
+import           Identifier
 import           Message
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai

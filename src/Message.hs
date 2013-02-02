@@ -2,6 +2,7 @@ module Message where
 
 import Control.Concurrent.STM
 import Core
+import Identifier
 
 type Message = (Identifier, Action)
 
