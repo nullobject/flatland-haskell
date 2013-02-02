@@ -1,2 +1,2 @@
 :set -isrc -itest
-:set -XOverloadedStrings
+:set -XArrows -XOverloadedStrings
