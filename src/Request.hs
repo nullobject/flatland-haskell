@@ -1,10 +1,6 @@
-module Message where
+module Request where
 
 import Control.Concurrent.STM
-import Core
-import Identifier
-
-type Message = (Identifier, Action)
 
 type Channel p s = TChan (Request p s)
 

@@ -10,10 +10,10 @@ import qualified Data.ByteString.Lazy as LBS
 import           Data.Conduit (ResourceT)
 import qualified Data.Maybe as Maybe
 import           Identifier
-import           Message
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import           Request
 import           WorldView (WorldView)
 
 data ServerState = ServerState {

@@ -3,8 +3,8 @@ module Game where
 import           Control.Concurrent (threadDelay)
 import           Control.Wire
 import           Core
-import           Message
 import           Prelude hiding ((.), id)
+import           Request
 import           World (World)
 import qualified World
 import           WorldView (WorldView)
@@ -19,9 +19,8 @@ respond world = do
   mapM_ respond'
   where
     respond' request = do
-      let sender = Message.sender request
       let worldView = WorldView.fromWorld world
-      sender `tell` worldView
+      (Request.sender request) `tell` worldView
 
 run :: Channel Message WorldView -> IO ()
 run chan = do
@@ -31,7 +30,7 @@ run chan = do
     run' wire session = do
       threadDelay oneSecond
       requests <- drain chan
-      let messages = map Message.payload requests
+      let messages = map Request.payload requests
       (output, wire', session') <- stepSessionP wire session messages
       case output of
         Left x -> putStrLn $ "Inhibited: " ++ show x
