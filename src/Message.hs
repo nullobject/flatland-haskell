@@ -2,13 +2,12 @@ module Message where
 
 import Control.Concurrent.STM
 import Core
-import WorldView
+
+type Message = (Identifier, Action)
 
 data Request = Request Message Response
 
-type Response = TMVar Message
-
-data Message = ActionMessage Action Identifier | WorldViewMessage WorldView deriving (Show)
+type Response = TMVar String
 
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
@@ -25,11 +24,11 @@ drain :: TChan Request -> IO [Request]
 drain chan = atomically $ drainTChan chan
 
 -- Replies to a message.
-tell :: Response -> Message -> IO ()
+tell :: Response -> String -> IO ()
 tell sender message = atomically $ putTMVar sender message
 
 -- Writes a message to the channel and waits for a response.
-ask :: TChan Request -> Message -> IO Message
+ask :: TChan Request -> Message -> IO String
 ask chan message = do
   sender <- newEmptyTMVarIO
   atomically $ writeTChan chan $ Request message sender

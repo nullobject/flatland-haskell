@@ -10,7 +10,6 @@ import           Data.ByteString.Char8 (unpack)
 import qualified Data.ByteString.Lazy as LBS
 import           Data.Conduit (ResourceT)
 import qualified Data.Maybe as Maybe
-import qualified Data.UUID as UUID
 import           Message
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
@@ -28,10 +27,10 @@ responseFailure value = Wai.responseLBS status400 [("Content-Type", "text/plain"
 responseSuccess :: (ToJSON a) => a -> Wai.Response
 responseSuccess value = Wai.responseLBS status200 [("Content-Type", "application/json")] $ encode $ value
 
-getPlayer :: Wai.Request -> Server (Maybe UUID.UUID)
+getPlayer :: Wai.Request -> Server (Maybe Identifier)
 getPlayer request = do
   let player = lookup "X-Player" $ Wai.requestHeaders request
-  return $ player >>= UUID.fromString . unpack
+  return $ player >>= readMaybe . unpack
 
 -- TODO: Parse the different messages.
 actionHandler :: Wai.Request -> Server Wai.Response
@@ -41,8 +40,8 @@ actionHandler request = do
     failure = return $ responseFailure "Missing header X-Player"
     success identifier = do
       server <- get
-      let message = ActionMessage Idle (Identifier identifier)
-      WorldViewMessage worldView <- liftIO $ chan server `ask` message
+      let message = (identifier, Idle)
+      worldView <- liftIO $ chan server `ask` message
       return $ responseSuccess worldView
 
 route :: Wai.Request -> Server Wai.Response
@@ -55,4 +54,5 @@ route request =
 -- Runs the server with the given request channel.
 run :: TChan Request -> IO ()
 run chan' = Warp.run 8000 app
-  where app request = evalStateT (route request) (ServerState chan')
+  where
+    app request = evalStateT (route request) (ServerState chan')

@@ -1,54 +1,31 @@
 module World where
 
-import           Control.Monad.State
-import           Core (Identifier)
-import           Data.Map (Map)
-import qualified Data.Map as Map
+import           Control.Wire
+import           Core (Age, Identifier)
 import           Entity (Entity)
 import qualified Entity
+import           Message (Message)
+import           Prelude hiding ((.), id)
 
-data WorldState = WorldState {
-  entities :: Map Identifier Entity,
-  age      :: Int
+-- A world contains a list of entities.
+data World = World {
+  age      :: Age,
+  entities :: [Entity]
 } deriving (Show)
 
-type World = StateT WorldState IO
+-- A world wire takes a list of messages and produces a new world state.
+type WorldWire = WireP [Message] World
 
 -- Returns a new world.
-empty :: WorldState
-empty = WorldState {
-  entities = Map.empty,
-  age      = 0
+empty :: World
+empty = World {
+  age      = 0,
+  entities = []
 }
 
--- Increments the age of the world.
-incrementAge :: WorldState -> WorldState
-incrementAge world = world {age = age'}
-  where age' = age world + 1
-
--- Ticks the entities in the world.
-tickEntities :: WorldState -> WorldState
-tickEntities world = world {entities = entities'}
-  where entities' = Map.map Entity.tick $ entities world
-
--- Adds an entity to the world.
-addEntity :: Entity -> WorldState -> WorldState
-addEntity entity world = world {entities = entities'}
-  where
-    identifier = Entity.id entity
-    entities' = Map.insert identifier entity $ entities world
-
--- Ticks the world.
-tick :: World ()
-tick = modify $ incrementAge . tickEntities
-
--- Spawns an entity in the world.
-spawn :: Entity -> World ()
-spawn entity = modify $ addEntity entity
-
--- Moves an entity in the world.
-move :: Identifier -> World ()
-move identifier = do
-  world <- get
-  let entities' = Map.adjust Entity.move identifier $ entities world
-  put world {entities = entities'}
+-- Returns a new world wire given an initial world state.
+worldWire :: World -> WorldWire
+worldWire world = proc messages -> do
+  age' <- countFrom 0 -< 1
+  entities' <- Entity.routeWire $ Entity.entityWire . Entity.empty -< messages
+  returnA -< world {age = age', entities = entities'}
