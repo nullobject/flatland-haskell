@@ -6,25 +6,36 @@ import           Control.Wire
 import           Core
 import           Message
 import           Prelude hiding ((.), id)
+import           World (World)
 import qualified World
 import qualified WorldView
 
 oneSecond :: Int
 oneSecond = 1000000
 
+-- Responds to the requests with the current world state.
+respond :: World -> [Request] -> IO ()
+respond world = do
+  mapM_ respond'
+  where
+    respond' request = do
+      let sender = Message.sender request
+      let worldView = WorldView.fromWorld world
+      sender `tell` show worldView
+
 run :: TChan Request -> IO ()
 run chan = do
-  run' (World.worldWire World.empty) clockSession
+  run' wire clockSession
   where
+    wire = World.worldWire World.empty
     run' wire session = do
       threadDelay oneSecond
       requests <- drain chan
-      let messages = map (\(Request message _) -> message) requests
+      let messages = map Message.message requests
       (output, wire', session') <- stepSessionP wire session messages
       case output of
         Left x -> putStrLn $ "Inhibited: " ++ show x
         Right world -> do
           putStrLn $ "Produced: " ++ show world
-          let worldView = WorldView.fromWorld world
-          mapM (\(Request _ sender) -> sender `tell` (show worldView)) requests
+          respond world requests
           run' wire' session'

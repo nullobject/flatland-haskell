@@ -5,7 +5,10 @@ import Core
 
 type Message = (Identifier, Action)
 
-data Request = Request Message Response
+data Request = Request {
+  message :: Message,
+  sender  :: Response
+}
 
 type Response = TMVar String
 

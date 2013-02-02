@@ -32,6 +32,6 @@ zeroVector :: Vector
 zeroVector = (0, 0)
 
 readMaybe :: (Read a) => String -> Maybe a
-readMaybe s = case [x | (x,t) <- reads s, ("", "") <- lex t] of
-                   [x] -> Just x
-                   _   -> Nothing
+readMaybe s = case [x | (x, t) <- reads s, ("", "") <- lex t] of
+                [x] -> Just x
+                _   -> Nothing
