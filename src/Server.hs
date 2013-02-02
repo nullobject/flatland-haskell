@@ -14,9 +14,10 @@ import           Message
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
+import           WorldView (WorldView)
 
 data ServerState = ServerState {
-  chan :: RequestChannel Message String
+  chan :: Channel Message WorldView
 }
 
 type Server = StateT ServerState (ResourceT IO)
@@ -52,7 +53,7 @@ route request =
     _          -> error "unexpected pathInfo"
 
 -- Runs the server with the given request channel.
-run :: RequestChannel Message String -> IO ()
+run :: Channel Message WorldView -> IO ()
 run chan' = Warp.run 8000 app
   where
     app request = evalStateT (route request) (ServerState chan')

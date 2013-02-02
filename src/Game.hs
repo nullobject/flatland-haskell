@@ -7,22 +7,23 @@ import           Message
 import           Prelude hiding ((.), id)
 import           World (World)
 import qualified World
+import           WorldView (WorldView)
 import qualified WorldView
 
 oneSecond :: Int
 oneSecond = 1000000
 
 -- Responds to the requests with the current world state.
-respond :: World -> [Request Message String] -> IO ()
+respond :: World -> [Request Message WorldView] -> IO ()
 respond world = do
   mapM_ respond'
   where
     respond' request = do
       let sender = Message.sender request
       let worldView = WorldView.fromWorld world
-      sender `tell` show worldView
+      sender `tell` worldView
 
-run :: RequestChannel Message String -> IO ()
+run :: Channel Message WorldView -> IO ()
 run chan = do
   run' wire clockSession
   where

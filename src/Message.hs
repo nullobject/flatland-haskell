@@ -6,16 +6,16 @@ import Identifier
 
 type Message = (Identifier, Action)
 
-data Request a b = Request {
-  payload :: a,
-  sender  :: Response b
+type Channel p s = TChan (Request p s)
+
+data Request p s = Request {
+  payload :: p,
+  sender  :: Sender s
 }
 
-type Response b = TMVar b
+type Sender s = TMVar s
 
-type RequestChannel a b = TChan (Request a b)
-
-drainTChan :: TChan b -> STM [b]
+drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
   empty <- isEmptyTChan chan
   if empty then return [] else drainTChan'
@@ -26,15 +26,15 @@ drainTChan chan = do
       return (x:xs)
 
 -- Drains the channel and returns the messages.
-drain :: RequestChannel a b -> IO [Request a b]
+drain :: Channel p s -> IO [Request p s]
 drain chan = atomically $ drainTChan chan
 
 -- Replies to a request.
-tell :: Response b -> b -> IO ()
+tell :: Sender s -> s -> IO ()
 tell sender payload = atomically $ putTMVar sender payload
 
 -- Writes a request to the channel and waits for a response.
-ask :: RequestChannel a b -> a -> IO b
+ask :: Channel p s -> p -> IO s
 ask chan payload = do
   sender <- newEmptyTMVarIO
   atomically $ writeTChan chan $ Request payload sender
