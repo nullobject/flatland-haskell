@@ -33,5 +33,6 @@ tell sender payload = atomically $ putTMVar sender payload
 ask :: Channel p s -> p -> IO s
 ask chan payload = do
   sender <- newEmptyTMVarIO
-  atomically $ writeTChan chan $ Request payload sender
+  let request = Request {Request.payload = payload, Request.sender = sender}
+  atomically $ writeTChan chan request
   atomically $ takeTMVar sender

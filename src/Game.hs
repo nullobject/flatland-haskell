@@ -14,6 +14,8 @@ oneSecond :: Int
 oneSecond = 1000000
 
 -- Responds to the requests with the current world state.
+--
+-- TODO: scope the world view to the entity.
 respond :: World -> [Request Message WorldView] -> IO ()
 respond world = do
   mapM_ respond'
