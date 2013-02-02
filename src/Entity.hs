@@ -3,7 +3,7 @@
 module Entity where
 
 import           Control.Wire
-import           Core (zeroVector, Action, Age, Health, Message, Vector)
+import           Core
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
 import           Data.Map (Map)
