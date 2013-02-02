@@ -6,14 +6,14 @@ import Identifier
 
 type Message = (Identifier, Action)
 
-data Request = Request {
+data Request a = Request {
   message :: Message,
-  sender  :: Response
+  sender  :: Response a
 }
 
-type Response = TMVar String
+type Response a = TMVar a
 
-type RequestChannel = TChan Request
+type RequestChannel a = TChan (Request a)
 
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
@@ -26,15 +26,15 @@ drainTChan chan = do
       return (x:xs)
 
 -- Drains the channel and returns the messages.
-drain :: RequestChannel -> IO [Request]
+drain :: RequestChannel a -> IO [Request a]
 drain chan = atomically $ drainTChan chan
 
 -- Replies to a message.
-tell :: Response -> String -> IO ()
+tell :: Response a -> a -> IO ()
 tell sender message = atomically $ putTMVar sender message
 
 -- Writes a message to the channel and waits for a response.
-ask :: RequestChannel -> Message -> IO String
+ask :: RequestChannel a -> Message -> IO a
 ask chan message = do
   sender <- newEmptyTMVarIO
   atomically $ writeTChan chan $ Request message sender

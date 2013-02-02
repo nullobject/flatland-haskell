@@ -13,7 +13,7 @@ oneSecond :: Int
 oneSecond = 1000000
 
 -- Responds to the requests with the current world state.
-respond :: World -> [Request] -> IO ()
+respond :: World -> [Request String] -> IO ()
 respond world = do
   mapM_ respond'
   where
@@ -22,7 +22,7 @@ respond world = do
       let worldView = WorldView.fromWorld world
       sender `tell` show worldView
 
-run :: RequestChannel -> IO ()
+run :: RequestChannel String -> IO ()
 run chan = do
   run' wire clockSession
   where
