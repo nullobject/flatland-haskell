@@ -13,6 +13,8 @@ data Request = Request {
 
 type Response = TMVar String
 
+type RequestChannel = TChan Request
+
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
   empty <- isEmptyTChan chan
@@ -24,7 +26,7 @@ drainTChan chan = do
       return (x:xs)
 
 -- Drains the channel and returns the messages.
-drain :: TChan Request -> IO [Request]
+drain :: RequestChannel -> IO [Request]
 drain chan = atomically $ drainTChan chan
 
 -- Replies to a message.
@@ -32,7 +34,7 @@ tell :: Response -> String -> IO ()
 tell sender message = atomically $ putTMVar sender message
 
 -- Writes a message to the channel and waits for a response.
-ask :: TChan Request -> Message -> IO String
+ask :: RequestChannel -> Message -> IO String
 ask chan message = do
   sender <- newEmptyTMVarIO
   atomically $ writeTChan chan $ Request message sender

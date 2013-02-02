@@ -1,7 +1,6 @@
 module Game where
 
 import           Control.Concurrent (threadDelay)
-import           Control.Concurrent.STM (TChan)
 import           Control.Wire
 import           Core
 import           Message
@@ -23,7 +22,7 @@ respond world = do
       let worldView = WorldView.fromWorld world
       sender `tell` show worldView
 
-run :: TChan Request -> IO ()
+run :: RequestChannel -> IO ()
 run chan = do
   run' wire clockSession
   where
