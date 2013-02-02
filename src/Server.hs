@@ -16,7 +16,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
 data ServerState = ServerState {
-  chan :: RequestChannel String
+  chan :: RequestChannel String Message
 }
 
 type Server = StateT ServerState (ResourceT IO)
@@ -52,7 +52,7 @@ route request =
     _          -> error "unexpected pathInfo"
 
 -- Runs the server with the given request channel.
-run :: RequestChannel String -> IO ()
+run :: RequestChannel String Message -> IO ()
 run chan' = Warp.run 8000 app
   where
     app request = evalStateT (route request) (ServerState chan')
