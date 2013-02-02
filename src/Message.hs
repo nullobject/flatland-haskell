@@ -7,7 +7,7 @@ import Identifier
 type Message = (Identifier, Action)
 
 data Request a = Request {
-  message :: Message,
+  payload :: Message,
   sender  :: Response a
 }
 
