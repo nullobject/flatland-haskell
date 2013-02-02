@@ -1,7 +1,9 @@
 module Identifier where
 
-import           Data.Aeson (toJSON, ToJSON)
+import           Control.Applicative (pure)
+import           Data.Aeson
 import           Data.Char (isSpace)
+import           Data.Text (unpack)
 import           Data.UUID (UUID)
 import qualified Data.UUID as UUID
 
@@ -17,5 +19,11 @@ instance Read Identifier where
 instance Show Identifier where
   show (Identifier uuid) = show uuid
 
+instance FromJSON Identifier where
+  parseJSON = withText "Identifier" $ \t ->
+    case UUID.fromString (unpack t) of
+      Just uuid -> pure $ Identifier uuid
+      _         -> fail "could not parse UUID"
+
 instance ToJSON Identifier where
-  toJSON identifier = toJSON $ show identifier
+  toJSON (Identifier uuid) = toJSON $ UUID.toString uuid
