@@ -2,6 +2,7 @@
 
 module Server where
 
+import           Action
 import           Control.Monad.State
 import           Core
 import           Data.Aeson (encode, ToJSON)

@@ -1,12 +1,11 @@
 module Core where
 
+import Action
 import Identifier
 
 type Age = Int
 
 type Health = Int
-
-data Action = Idle | Attack | Move Double | Turn Int deriving (Show)
 
 type Message = (Identifier, Action)
 

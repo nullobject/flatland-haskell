@@ -2,6 +2,7 @@
 
 module Entity where
 
+import           Action
 import           Control.Wire
 import           Core
 import           Data.Aeson (toJSON, ToJSON)
