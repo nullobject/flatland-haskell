@@ -13,8 +13,8 @@ instance Read Identifier where
   readsPrec _ s =
     let noSpaces = dropWhile isSpace s
     in case UUID.fromString (take 36 noSpaces) of
-      Nothing -> []
       Just u  -> [(Identifier u, drop 36 noSpaces)]
+      Nothing -> []
 
 instance Show Identifier where
   show (Identifier uuid) = show uuid

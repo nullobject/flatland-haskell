@@ -1,15 +1,15 @@
-module Request where
+module Channel where
 
 import Control.Concurrent.STM
 
-type Channel p s = TChan (Request p s)
+type Sender s = TMVar s
 
 data Request p s = Request {
   payload :: p,
   sender  :: Sender s
 }
 
-type Sender s = TMVar s
+type Channel p s = TChan (Request p s)
 
 drainTChan :: TChan a -> STM [a]
 drainTChan chan = do
@@ -31,8 +31,8 @@ tell sender payload = atomically $ putTMVar sender payload
 
 -- Writes a request to the channel and waits for a response.
 ask :: Channel p s -> p -> IO s
-ask chan payload = do
-  sender <- newEmptyTMVarIO
-  let request = Request {Request.payload = payload, Request.sender = sender}
+ask chan payload' = do
+  sender' <- newEmptyTMVarIO
+  let request = Request {payload = payload', sender = sender'}
   atomically $ writeTChan chan request
-  atomically $ takeTMVar sender
+  atomically $ takeTMVar sender'

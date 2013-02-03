@@ -3,6 +3,7 @@
 module Server where
 
 import           Action
+import           Channel (ask, Channel)
 import           Control.Applicative ((<$>))
 import           Control.Monad.State
 import           Core
@@ -16,7 +17,6 @@ import           Identifier
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
-import           Request
 import           WorldView (WorldView)
 
 data ServerState = ServerState {
