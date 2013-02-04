@@ -24,6 +24,7 @@ respond world = do
       let worldView = WorldView.fromWorld world
       (Channel.sender request) `tell` worldView
 
+-- TODO: handle the case where the world wire inhibits.
 run :: Channel Message WorldView -> IO ()
 run chan = do
   run' wire clockSession

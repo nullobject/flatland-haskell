@@ -8,20 +8,20 @@ import           Identifier
 import           Prelude hiding ((.), id)
 
 -- A world contains a list of entities.
-data World = World {
-  age      :: Age,
-  entities :: [Entity]
-} deriving (Show)
+data World = World
+  { age      :: Age
+  , entities :: [Entity]
+  } deriving (Show)
 
 -- A world wire takes a list of messages and produces a new world state.
 type WorldWire = WireP [Message] World
 
 -- Returns a new world.
 empty :: World
-empty = World {
-  age      = 0,
-  entities = []
-}
+empty = World
+  { age      = 0
+  , entities = []
+  }
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire

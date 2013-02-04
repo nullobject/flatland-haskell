@@ -21,14 +21,14 @@ instance ToJSON State where
   toJSON s = toJSON $ map toLower $ show s
 
 -- An entity is an actor in the world.
-data Entity = Entity {
-  id       :: Identifier,
-  age      :: Age,
-  position :: Vector,
-  velocity :: Vector,
-  health   :: Health,
-  state    :: State
-} deriving (Generic, Show)
+data Entity = Entity
+  { id       :: Identifier
+  , age      :: Age
+  , position :: Vector
+  , velocity :: Vector
+  , health   :: Health
+  , state    :: State
+  } deriving (Generic, Show)
 
 instance ToJSON Entity
 
@@ -40,14 +40,14 @@ type EntityWireMap = Map Identifier EntityWire
 
 -- Returns a new entity.
 empty :: Identifier -> Entity
-empty identifier = Entity {
-  Entity.id = identifier,
-  age       = 0,
-  position  = zeroVector,
-  velocity  = zeroVector,
-  health    = 100,
-  state     = Alive
-}
+empty identifier = Entity
+  { Entity.id = identifier
+  , age       = 0
+  , position  = zeroVector
+  , velocity  = zeroVector
+  , health    = 100
+  , state     = Alive
+  }
 
 stateWire :: WireP Int State
 stateWire = pure Alive . when (<5) <|> pure Dead
