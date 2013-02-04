@@ -46,11 +46,11 @@ actionHandler request = do
   where
     failure = return $ responseFailure "Missing header X-Player"
     success identifier = do
+      server <- get
       body <- requestBody request
       let action = decode body :: Maybe Action
-      liftIO $ print $ action
-      server <- get
       let message = (identifier, Maybe.fromJust action)
+      liftIO $ print $ message
       worldView <- liftIO $ chan server `ask` message
       return $ responseSuccess worldView
 
