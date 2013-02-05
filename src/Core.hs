@@ -7,6 +7,8 @@ type Age = Int
 
 type Health = Int
 
+type Score = Int
+
 type Message = (Identifier, Action)
 
 type Vector = (Double, Double)

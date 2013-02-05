@@ -1,0 +1,100 @@
+{-# LANGUAGE DeriveGeneric, TupleSections #-}
+
+module Player where
+
+import           Action
+import           Control.Wire
+import           Core
+import           Entity (Entity)
+import qualified Entity
+import           Data.Aeson (toJSON, ToJSON)
+import           Data.Char (toLower)
+import           Data.Map (Map)
+import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
+import qualified Data.Traversable as Traversable
+import qualified Data.Key as Key
+import           GHC.Generics (Generic)
+import           Identifier
+import           Prelude hiding ((.), id)
+
+data State =
+    Alive
+  | Dead
+  | Spawning
+  deriving (Eq, Generic, Show)
+
+instance ToJSON State where
+  toJSON s = toJSON $ map toLower $ show s
+
+-- | A player represents the state of a player in the game. A player controls
+-- an entity in the world.
+data Player = Player
+  { id     :: Identifier
+  , entity :: Maybe Entity
+  , score  :: Score
+  , state  :: State
+  } deriving (Generic, Show)
+
+instance ToJSON Player
+
+-- A player wire takes a message and produces a new player state.
+type PlayerWire = WireP (Maybe Action) Player
+
+-- A map from an identifier to a player wire.
+type PlayerWireMap = Map Identifier PlayerWire
+
+empty :: Identifier -> Player
+empty identifier = Player
+  { Player.id = identifier
+  , entity    = Nothing
+  , score     = 0
+  , state     = Dead
+  }
+
+stateWire :: WireP (Maybe Entity) State
+stateWire = pure Alive . when Maybe.isJust <|> pure Dead
+
+-- Returns a new player wire given an initial player state.
+--
+-- The player wire controls the players' state and the state of the player's
+-- entity.
+--
+-- TODO:
+-- * set the entity to nothing if it is dead (inhibits)
+-- * spawn an entity when the spawn action is received (and the player is dead).
+playerWire :: Player -> PlayerWire
+playerWire player = proc action -> do
+  entity' <- Entity.entityWire $ Entity.empty (Player.id player) -< action
+  state' <- stateWire -< Just entity'
+  score' <- pure 0 -< ()
+  returnA -< player {entity = Just entity', state = state', score = score'}
+
+-- Evolves a list of player wires, routing actions which are addressed to them
+-- by matching their identifiers. Actions which are addressed to unknown player
+-- wires are created using the constructor.
+routeWire :: (Identifier -> PlayerWire) -> WireP [Message] [Player]
+routeWire constructor = route Map.empty
+  where
+    route :: PlayerWireMap -> WireP [Message] [Player]
+    route playerWireMap = mkGen $ \dt messages -> do
+      -- Create a map from identifiers to actions.
+      let actionMap = Map.fromList messages
+
+      -- Ensure the messages can be delivered to player wires.
+      let playerWireMap' = foldl spawn playerWireMap $ Map.keys actionMap
+
+      -- Step the player wires, supplying the optional actions.
+      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (Map.lookup identifier actionMap)) playerWireMap'
+
+      -- WTF does this do?
+      let resx = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res
+
+      return (fmap Map.elems (fmap (fmap fst) resx), route (fmap snd res))
+
+    -- Spawns a new player wire if one with the identifier doesn't already exist.
+    spawn :: PlayerWireMap -> Identifier -> PlayerWireMap
+    spawn playerWireMap identifier = Map.alter f identifier playerWireMap
+      where
+        f = Just . maybe wire Control.Wire.id
+        wire = constructor identifier
