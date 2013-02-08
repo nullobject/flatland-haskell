@@ -64,5 +64,4 @@ route request =
 -- Runs the server with the given request channel.
 run :: Channel Message WorldView -> IO ()
 run chan = Warp.run 8000 app
-  where
-    app request = evalStateT (route request) (ServerState chan)
+  where app request = evalStateT (route request) (ServerState chan)
