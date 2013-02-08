@@ -6,11 +6,12 @@ import Data.Aeson
 import GHC.Generics (Generic)
 
 data Action =
-    Idle
+    Spawn
+  | Idle
   | Attack
   | Move Double
   | Turn Int
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 instance FromJSON Action
 instance ToJSON Action

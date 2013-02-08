@@ -46,10 +46,13 @@ empty identifier = Entity
   }
 
 stateWire :: WireP Int State
-stateWire = pure Alive . when (<5) <|> pure Dead
+stateWire = pure Alive . when (< 3) <|> pure Dead
 
 accelerationWire :: WireP a Vector
 accelerationWire = pure (1, 1) . periodicallyI 1 <|> pure (0, 0)
+
+healthWire :: WireP a Int
+healthWire = pure 100
 
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
@@ -58,5 +61,12 @@ entityWire entity = proc _ -> do
   acceleration' <- accelerationWire -< ()
   velocity' <- integral1_ zeroVector -< acceleration'
   position' <- integral1_ zeroVector -< velocity'
+  health' <- healthWire -< ()
   state' <- stateWire -< age'
-  returnA -< entity {age = age', position = position', velocity = velocity', state = state'}
+  returnA -< entity {
+      age      = age'
+    , position = position'
+    , velocity = velocity'
+    , health   = health'
+    , state    = state'
+    }

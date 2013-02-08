@@ -32,7 +32,6 @@ instance ToJSON State where
 data Player = Player
   { id     :: Identifier
   , entity :: Maybe Entity
-  , score  :: Score
   , state  :: State
   } deriving (Generic, Show)
 
@@ -48,27 +47,43 @@ empty :: Identifier -> Player
 empty identifier = Player
   { Player.id = identifier
   , entity    = Nothing
-  , score     = 0
   , state     = Dead
   }
 
 stateWire :: WireP (Maybe Entity) State
 stateWire = pure Alive . when Maybe.isJust <|> pure Dead
 
+-- Waits for a spawn action, then waits for 3 seconds, and then inhibits.
+spawnWire :: WireP (Maybe Action) (Maybe Entity)
+spawnWire = pure Nothing . (Control.Wire.until (== Just Spawn) --> for 3)
+
+-- Evolves an entity.
+entityWire :: Identifier -> WireP (Maybe Action) (Maybe Entity)
+entityWire identifier = proc action -> do
+  entity' <- Entity.entityWire $ Entity.empty identifier -< action
+  _ <- deadWire -< entity'
+  returnA -< Just entity'
+
+-- Inhibits if the entity is dead.
+deadWire :: WireP Entity Entity
+deadWire = Control.Wire.until dead --> Control.Wire.empty
+  where dead entity = Entity.state entity == Entity.Dead
+
+-- Continually spawns entities.
+keepSpawning :: Identifier -> WireP (Maybe Action) (Maybe Entity)
+keepSpawning identifier = switchBy (const wire) wire
+  where wire = spawnWire --> entityWire identifier
+
 -- Returns a new player wire given an initial player state.
 --
 -- The player wire controls the players' state and the state of the player's
 -- entity.
---
--- TODO:
--- * set the entity to nothing if it is dead (inhibits)
--- * spawn an entity when the spawn action is received (and the player is dead).
 playerWire :: Player -> PlayerWire
 playerWire player = proc action -> do
-  entity' <- Entity.entityWire $ Entity.empty (Player.id player) -< action
-  state' <- stateWire -< Just entity'
-  score' <- pure 0 -< ()
-  returnA -< player {entity = Just entity', state = state', score = score'}
+  entity' <- keepSpawning identifier -< action
+  state' <- stateWire -< entity'
+  returnA -< player {entity = entity', state = state'}
+  where identifier = Player.id player
 
 -- Evolves a list of player wires, routing actions which are addressed to them
 -- by matching their identifiers. Actions which are addressed to unknown player
