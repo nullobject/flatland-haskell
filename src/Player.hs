@@ -4,6 +4,7 @@ module Player where
 
 import           Action
 import           Control.Wire
+import qualified Control.Wire as Wire
 import           Core
 import           Entity (Entity)
 import qualified Entity
@@ -19,9 +20,9 @@ import           Identifier
 import           Prelude hiding ((.), id)
 
 data State =
-    Alive
-  | Dead
+    Dead
   | Spawning
+  | Alive
   deriving (Eq, Generic, Show)
 
 instance ToJSON State where
@@ -50,12 +51,13 @@ empty identifier = Player
   , state     = Dead
   }
 
+-- TODO: Should return spawning when spawning an entity.
 stateWire :: WireP (Maybe Entity) State
 stateWire = pure Alive . when Maybe.isJust <|> pure Dead
 
 -- Waits for a spawn action, then waits for 3 seconds, and then inhibits.
-spawnWire :: WireP (Maybe Action) (Maybe Entity)
-spawnWire = pure Nothing . (Control.Wire.until (== Just Spawn) --> for 3)
+waitForSpawnWire :: WireP (Maybe Action) (Maybe Entity)
+waitForSpawnWire = pure Nothing . (Wire.until (== Just Spawn) --> for 3)
 
 -- Evolves an entity.
 entityWire :: Identifier -> WireP (Maybe Action) (Maybe Entity)
@@ -66,13 +68,8 @@ entityWire identifier = proc action -> do
 
 -- Inhibits if the entity is dead.
 deadWire :: WireP Entity Entity
-deadWire = Control.Wire.until dead --> Control.Wire.empty
+deadWire = Wire.until dead --> Wire.empty
   where dead entity = Entity.state entity == Entity.Dead
-
--- Continually spawns entities.
-keepSpawning :: Identifier -> WireP (Maybe Action) (Maybe Entity)
-keepSpawning identifier = switchBy (const wire) wire
-  where wire = spawnWire --> entityWire identifier
 
 -- Returns a new player wire given an initial player state.
 --
@@ -80,7 +77,7 @@ keepSpawning identifier = switchBy (const wire) wire
 -- entity.
 playerWire :: Player -> PlayerWire
 playerWire player = proc action -> do
-  entity' <- keepSpawning identifier -< action
+  entity' <- continually $ waitForSpawnWire --> entityWire identifier -< action
   state' <- stateWire -< entity'
   returnA -< player {entity = entity', state = state'}
   where identifier = Player.id player
@@ -111,5 +108,9 @@ routeWire constructor = route Map.empty
     spawn :: PlayerWireMap -> Identifier -> PlayerWireMap
     spawn playerWireMap identifier = Map.alter f identifier playerWireMap
       where
-        f = Just . maybe wire Control.Wire.id
+        f = Just . maybe wire Wire.id
         wire = constructor identifier
+
+-- Another wire is constructed whenever the given wire wire inhibits.
+continually :: WireP a b -> WireP a b
+continually wire = switchBy (const wire) wire

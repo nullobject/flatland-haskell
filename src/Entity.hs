@@ -12,8 +12,8 @@ import Identifier
 import Prelude hiding ((.), id)
 
 data State =
-    Alive
-  | Dead
+    Dead
+  | Alive
   deriving (Eq, Generic, Show)
 
 instance ToJSON State where
@@ -46,7 +46,7 @@ empty identifier = Entity
   }
 
 stateWire :: WireP Int State
-stateWire = pure Alive . when (< 3) <|> pure Dead
+stateWire = pure Alive . when (< 10) <|> pure Dead
 
 accelerationWire :: WireP a Vector
 accelerationWire = pure (1, 1) . periodicallyI 1 <|> pure (0, 0)
