@@ -2,6 +2,7 @@ module World where
 
 import           Control.Wire
 import           Core
+import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import           Entity (Entity)
 import           Identifier
@@ -25,7 +26,12 @@ empty = World
   , players = []
   }
 
--- TODO: map the entities from the player wires.
+-- Returns the player with the given identifier.
+getPlayer :: Identifier -> World -> Maybe Player
+getPlayer identifier world = List.find predicate $ players world
+  where predicate = \player -> Player.id player == identifier
+
+-- Returns the entities.
 entities :: World -> [Entity]
 entities world = Maybe.catMaybes $ map Player.entity $ players world
 

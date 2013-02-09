@@ -5,6 +5,7 @@ module WorldView where
 import           Data.Aeson (ToJSON)
 import           GHC.Generics (Generic)
 import           Entity (Entity)
+import           Identifier
 import           Player (Player)
 import           World (World)
 import qualified World
@@ -17,12 +18,10 @@ data WorldView = WorldView
 
 instance ToJSON WorldView
 
--- Returns a new world view for the given player in the world.
---
--- TODO: return the given player.
-fromWorld :: World -> WorldView
-fromWorld world = WorldView
+-- Returns a new world view for the given player.
+forPlayer :: Player -> World -> WorldView
+forPlayer player world = WorldView
   { age      = World.age world
   , entities = World.entities world
-  , player   = head $ World.players world
+  , player   = player
   }

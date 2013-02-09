@@ -4,6 +4,7 @@ import           Channel
 import           Control.Concurrent (threadDelay)
 import           Control.Wire
 import           Core
+import qualified Data.Maybe as Maybe
 import           Prelude hiding ((.), id)
 import           World (World)
 import qualified World
@@ -14,20 +15,17 @@ oneSecond :: Int
 oneSecond = 1000000
 
 -- Responds to the requests with the current world state.
---
--- TODO: scope the world view to the entity.
 respond :: World -> [Request Message WorldView] -> IO ()
-respond world = do
-  mapM_ respond'
+respond world = mapM_ respond'
   where
-    respond' request = do
-      let worldView = WorldView.fromWorld world
-      (Channel.sender request) `tell` worldView
+    respond' (Request (identifier, _) sender) = do
+      let player = Maybe.fromJust $ World.getPlayer identifier world
+      let worldView = WorldView.forPlayer player world
+      sender `tell` worldView
 
 -- TODO: handle the case where the world wire inhibits.
 run :: Channel Message WorldView -> IO ()
-run chan = do
-  run' wire clockSession
+run chan = run' wire clockSession
   where
     wire = World.worldWire World.empty
     run' wire session = do
