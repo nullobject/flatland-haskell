@@ -2,10 +2,11 @@ module World where
 
 import           Control.Wire
 import           Core
+import qualified Data.Maybe as Maybe
 import           Entity (Entity)
+import           Identifier
 import           Player (Player)
 import qualified Player
-import           Identifier
 import           Prelude hiding ((.), id)
 
 -- A world contains a list of players.
@@ -26,7 +27,7 @@ empty = World
 
 -- TODO: map the entities from the player wires.
 entities :: World -> [Entity]
-entities _ = []
+entities world = Maybe.catMaybes $ map Player.entity $ players world
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
