@@ -110,7 +110,3 @@ routeWire constructor = route Map.empty
       where
         f = Just . maybe wire Wire.id
         wire = constructor identifier
-
--- Another wire is constructed whenever the given wire wire inhibits.
-continually :: WireP a b -> WireP a b
-continually wire = switchBy (const wire) wire
