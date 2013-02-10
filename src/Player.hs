@@ -66,10 +66,9 @@ playerWire :: Player -> PlayerWire
 playerWire player = proc action -> do
   (state', entity') <- continually $ entityWire -< action
   returnA -< player {entity = entity', state = state'}
-  where
-    entityWire = pure (Dead, Nothing) . Wire.until (== Just Spawn) -->
-                 pure (Spawning, Nothing) . for 3 -->
-                 pure Alive &&& spawnEntityWire
+  where entityWire = pure (Dead, Nothing) . Wire.until (== Just Spawn) -->
+                     pure (Spawning, Nothing) . for 3 -->
+                     pure Alive &&& spawnEntityWire
 
 -- Evolves a list of player wires, routing actions which are addressed to them
 -- by matching their identifiers. Actions which are addressed to unknown player

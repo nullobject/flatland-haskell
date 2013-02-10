@@ -49,17 +49,21 @@ empty identifier = Entity
 stateWire :: MyWire Int State
 stateWire = pure Alive . when (< 3) <|> Wire.empty
 
-accelerationWire :: MyWire a Vector
-accelerationWire = pure (1, 1) . periodicallyI 1 <|> pure (0, 0)
+accelerationWire :: MyWire (Maybe Action) Vector
+accelerationWire = execute_ action
+  where action (Just (Move d)) = return (d, d)
+        action _               = return (0, 0)
 
 healthWire :: MyWire a Int
 healthWire = pure 100
 
 -- Returns a new entity wire given an initial entity state.
+--
+-- The entity wire inhibits when the entity dies.
 entityWire :: Entity -> EntityWire
-entityWire entity = proc _ -> do
+entityWire entity = proc action -> do
   age' <- countFrom 0 -< 1
-  acceleration' <- accelerationWire -< ()
+  acceleration' <- accelerationWire -< action
   velocity' <- integral1_ zeroVector -< acceleration'
   position' <- integral1_ zeroVector -< velocity'
   health' <- healthWire -< ()
