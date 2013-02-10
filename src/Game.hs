@@ -32,7 +32,7 @@ run chan = run' wire clockSession
       threadDelay oneSecond
       requests <- drain chan
       let messages = map Channel.payload requests
-      (output, wire', session') <- stepSessionP wire session messages
+      (output, wire', session') <- stepSession wire session messages
       case output of
         Left x -> putStrLn $ "Inhibited: " ++ show x
         Right world -> do

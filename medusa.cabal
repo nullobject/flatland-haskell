@@ -36,6 +36,7 @@ executable medusa
     netwire,
     random,
     stm,
+    text,
     uuid,
     vector-space,
     wai,

@@ -17,7 +17,7 @@ data World = World
   } deriving (Show)
 
 -- A world wire takes a list of messages and produces a new world state.
-type WorldWire = WireP [Message] World
+type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
 empty :: World
@@ -31,7 +31,7 @@ getPlayer :: Identifier -> World -> Maybe Player
 getPlayer identifier world = List.find predicate $ players world
   where predicate = \player -> Player.id player == identifier
 
--- Returns the entities.
+-- Returns the entities in the world.
 entities :: World -> [Entity]
 entities world = Maybe.catMaybes $ map Player.entity $ players world
 

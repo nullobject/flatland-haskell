@@ -2,14 +2,15 @@
 
 module Entity where
 
-import Action
-import Control.Wire
-import Core
-import Data.Aeson (toJSON, ToJSON)
-import Data.Char (toLower)
-import GHC.Generics (Generic)
-import Identifier
-import Prelude hiding ((.), id)
+import           Action
+import           Control.Wire
+import qualified Control.Wire as Wire
+import           Core
+import           Data.Aeson (toJSON, ToJSON)
+import           Data.Char (toLower)
+import           GHC.Generics (Generic)
+import           Identifier
+import           Prelude hiding ((.), id)
 
 data State =
     Dead
@@ -32,7 +33,7 @@ data Entity = Entity
 instance ToJSON Entity
 
 -- An entity wire takes a message and produces a new entity state.
-type EntityWire = WireP (Maybe Action) Entity
+type EntityWire = MyWire (Maybe Action) (Maybe Entity)
 
 -- Returns a new entity.
 empty :: Identifier -> Entity
@@ -45,13 +46,13 @@ empty identifier = Entity
   , state     = Alive
   }
 
-stateWire :: WireP Int State
-stateWire = pure Alive . when (< 10) <|> pure Dead
+stateWire :: MyWire Int State
+stateWire = pure Alive . when (< 3) <|> Wire.empty
 
-accelerationWire :: WireP a Vector
+accelerationWire :: MyWire a Vector
 accelerationWire = pure (1, 1) . periodicallyI 1 <|> pure (0, 0)
 
-healthWire :: WireP a Int
+healthWire :: MyWire a Int
 healthWire = pure 100
 
 -- Returns a new entity wire given an initial entity state.
@@ -63,7 +64,7 @@ entityWire entity = proc _ -> do
   position' <- integral1_ zeroVector -< velocity'
   health' <- healthWire -< ()
   state' <- stateWire -< age'
-  returnA -< entity {
+  returnA -< Just entity {
       age      = age'
     , position = position'
     , velocity = velocity'

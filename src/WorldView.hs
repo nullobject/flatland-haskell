@@ -5,7 +5,6 @@ module WorldView where
 import           Data.Aeson (ToJSON)
 import           GHC.Generics (Generic)
 import           Entity (Entity)
-import           Identifier
 import           Player (Player)
 import           World (World)
 import qualified World
