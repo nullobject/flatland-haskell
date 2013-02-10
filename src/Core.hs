@@ -1,6 +1,7 @@
 module Core where
 
 import Action
+import Control.Wire
 import Identifier
 
 type Age = Int
@@ -12,6 +13,8 @@ type Score = Int
 type Message = (Identifier, Action)
 
 type Vector = (Double, Double)
+
+type MyWire = Wire LastException IO
 
 zeroVector :: Vector
 zeroVector = (0, 0)
