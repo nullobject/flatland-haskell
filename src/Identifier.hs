@@ -6,6 +6,7 @@ import           Data.Char (isSpace)
 import           Data.Text (unpack)
 import           Data.UUID (UUID)
 import qualified Data.UUID as UUID
+import qualified Data.UUID.V4 as UUID.V4
 
 newtype Identifier = Identifier UUID deriving (Eq, Ord)
 
@@ -27,3 +28,9 @@ instance FromJSON Identifier where
 
 instance ToJSON Identifier where
   toJSON (Identifier uuid) = toJSON $ UUID.toString uuid
+
+-- Generates a random identifier.
+nextRandom :: IO Identifier
+nextRandom = do
+  uuid <- UUID.V4.nextRandom
+  return $ Identifier uuid
