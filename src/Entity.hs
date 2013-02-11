@@ -51,8 +51,8 @@ stateWire = pure Alive . when (< 3) <|> Wire.empty
 
 accelerationWire :: MyWire (Maybe Action) Vector
 accelerationWire = execute_ action
-  where action (Just (Move d)) = return (d, d)
-        action _               = return (0, 0)
+  where action (Just (Move direction)) = return direction
+        action _                       = return zeroVector
 
 healthWire :: MyWire a Int
 healthWire = pure 100

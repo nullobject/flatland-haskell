@@ -9,7 +9,7 @@ data Action =
     Spawn
   | Idle
   | Attack
-  | Move Double
+  | Move (Double, Double)
   | Turn Int
   deriving (Eq, Generic, Show)
 
