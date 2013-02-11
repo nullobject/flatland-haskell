@@ -1,10 +1,14 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module World where
 
 import           Control.Wire
 import           Core
+import           Data.Aeson (ToJSON)
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import           Entity (Entity)
+import           GHC.Generics (Generic)
 import           Identifier
 import           Player (Player)
 import qualified Player
@@ -14,7 +18,9 @@ import           Prelude hiding ((.), id)
 data World = World
   { age      :: Age
   , players  :: [Player]
-  } deriving (Show)
+  } deriving (Generic, Show)
+
+instance ToJSON World
 
 -- A world wire takes a list of messages and produces a new world state.
 type WorldWire = MyWire [Message] World

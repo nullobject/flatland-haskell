@@ -1,10 +1,14 @@
 module Game where
 
+import           Blaze.ByteString.Builder.ByteString (fromLazyByteString)
 import           Channel
-import           Control.Concurrent (threadDelay)
+import           Control.Concurrent (threadDelay, writeChan, Chan)
+import           Control.Monad.State
 import           Control.Wire
 import           Core
+import           Data.Aeson (encode, ToJSON)
 import qualified Data.Maybe as Maybe
+import qualified Network.Wai.EventSource as Wai.EventSource
 import           Prelude hiding ((.), id)
 import           World (World)
 import qualified World
@@ -24,13 +28,13 @@ respond world = mapM_ respond'
       sender `tell` worldView
 
 -- TODO: handle the case where the world wire inhibits.
-run :: Channel Message WorldView -> IO ()
-run chan = run' wire clockSession
+run :: Channel Message WorldView -> Chan Wai.EventSource.ServerEvent -> IO ()
+run messageChannel eventChannel = run' wire clockSession
   where
     wire = World.worldWire World.empty
     run' wire session = do
       threadDelay oneSecond
-      requests <- drain chan
+      requests <- drain messageChannel
       let messages = map Channel.payload requests
       (output, wire', session') <- stepSession wire session messages
       case output of
@@ -38,4 +42,5 @@ run chan = run' wire clockSession
         Right world -> do
           putStrLn $ "Produced: " ++ show world
           respond world requests
+          _ <- liftIO $ writeChan eventChannel (Wai.EventSource.ServerEvent Nothing Nothing [fromLazyByteString $ encode world])
           run' wire' session'

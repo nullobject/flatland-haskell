@@ -1,12 +1,16 @@
 module Main where
 
-import           Control.Concurrent (forkIO)
+import           Control.Concurrent (forkIO, killThread, newChan)
 import           Control.Concurrent.STM (newTChanIO)
+import           Control.Exception (bracket)
 import qualified Game
 import qualified Server
 
 main :: IO ()
 main = do
-  chan <- newTChanIO
-  _ <- forkIO $ Game.run chan
-  Server.run chan
+  messageChannel <- newTChanIO
+  eventChannel <- newChan
+  bracket
+    (forkIO $ Game.run messageChannel eventChannel)
+    killThread
+    (const $ Server.run eventChannel messageChannel)

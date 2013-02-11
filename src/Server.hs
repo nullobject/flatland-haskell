@@ -5,6 +5,7 @@ module Server where
 import           Action
 import           Channel (ask, Channel)
 import           Control.Applicative ((<$>))
+import           Control.Concurrent (Chan)
 import           Control.Monad.State
 import           Core
 import           Data.Aeson (decode, encode, ToJSON)
@@ -16,10 +17,15 @@ import qualified Data.Maybe as Maybe
 import           Identifier
 import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
+import qualified Network.Wai.EventSource as Wai.EventSource
 import qualified Network.Wai.Handler.Warp as Warp
+import           World (World)
 import           WorldView (WorldView)
 
-data ServerState = ServerState { chan :: Channel Message WorldView }
+data ServerState = ServerState
+  { eventChannel   :: Chan Wai.EventSource.ServerEvent
+  , messageChannel :: Channel Message WorldView
+  }
 
 type Server = StateT ServerState (C.ResourceT IO)
 
@@ -49,17 +55,19 @@ actionHandler request = do
       let action = decode body :: Maybe Action
       let message = (identifier, Maybe.fromJust action)
       liftIO $ print $ message
-      worldView <- liftIO $ chan server `ask` message
+      worldView <- liftIO $ messageChannel server `ask` message
       return $ responseSuccess worldView
 
 route :: Wai.Request -> Server Wai.Response
-route request =
+route request = do
+  server <- get
   case Wai.pathInfo request of
     []         -> return $ Wai.ResponseFile status200 [("Content-Type", "text/html")] "static/index.html" Nothing
     ["action"] -> actionHandler request
+    ["events"] -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request
     _          -> error "unexpected pathInfo"
 
 -- Runs the server with the given request channel.
-run :: Channel Message WorldView -> IO ()
-run chan = Warp.run 8000 app
-  where app request = evalStateT (route request) (ServerState chan)
+run :: Chan Wai.EventSource.ServerEvent -> Channel Message WorldView -> IO ()
+run eventChannel messageChannel = Warp.run 8000 app
+  where app request = evalStateT (route request) (ServerState eventChannel messageChannel)
