@@ -68,8 +68,8 @@ entityWire entity = proc action -> do
   position' <- integral1_ zeroVector -< velocity'
   health' <- healthWire -< ()
   state' <- stateWire -< age'
-  returnA -< Just entity {
-      age      = age'
+  returnA -< Just entity
+    { age      = age'
     , position = position'
     , velocity = velocity'
     , health   = health'

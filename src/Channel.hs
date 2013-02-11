@@ -4,10 +4,10 @@ import Control.Concurrent.STM
 
 type Sender s = TMVar s
 
-data Request p s = Request {
-  payload :: p,
-  sender  :: Sender s
-}
+data Request p s = Request
+  { payload :: p
+  , sender  :: Sender s
+  }
 
 type Channel p s = TChan (Request p s)
 

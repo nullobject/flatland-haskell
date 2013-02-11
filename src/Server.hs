@@ -19,9 +19,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import           WorldView (WorldView)
 
-data ServerState = ServerState {
-  chan :: Channel Message WorldView
-}
+data ServerState = ServerState { chan :: Channel Message WorldView }
 
 type Server = StateT ServerState (C.ResourceT IO)
 
