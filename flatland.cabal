@@ -24,36 +24,37 @@ executable flatland
   hs-source-dirs: src
   main-is: Main.hs
   build-depends:
-    aeson,
-    base,
-    bytestring,
-    conduit,
-    containers,
-    ghc-prim,
-    http-types,
-    keys,
-    mtl,
-    netwire,
-    random,
-    stm,
-    text,
-    uuid,
-    vector-space,
-    wai,
-    wai-eventsource,
-    warp
+      aeson
+    , base
+    , blaze-builder
+    , bytestring
+    , conduit
+    , containers
+    , ghc-prim
+    , http-types
+    , keys
+    , mtl
+    , netwire
+    , random
+    , stm
+    , text
+    , uuid
+    , vector-space
+    , wai
+    , wai-eventsource
+    , warp
 
 test-suite hunit
   type: exitcode-stdio-1.0
   hs-source-dirs: src, test
   main-is: Test.hs
   build-depends:
-    aeson,
-    base,
-    containers,
-    ghc-prim,
-    mtl,
-    test-framework,
-    test-framework-hunit,
-    uuid,
-    HUnit
+      aeson
+    , base
+    , containers
+    , ghc-prim
+    , mtl
+    , test-framework
+    , test-framework-hunit
+    , uuid
+    , HUnit
