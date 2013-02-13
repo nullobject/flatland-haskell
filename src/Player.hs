@@ -32,8 +32,8 @@ instance ToJSON State where
 -- an entity in the world.
 data Player = Player
   { id     :: Identifier
-  , entity :: Maybe Entity
   , state  :: State
+  , entity :: Maybe Entity
   } deriving (Generic, Show)
 
 instance ToJSON Player
@@ -47,8 +47,8 @@ type PlayerWireMap = Map Identifier PlayerWire
 empty :: Identifier -> Player
 empty identifier = Player
   { Player.id = identifier
-  , entity    = Nothing
   , state     = Dead
+  , entity    = Nothing
   }
 
 -- Spawns a new entity.
@@ -65,7 +65,7 @@ spawnEntityWire = mkGen $ \dt action -> do
 playerWire :: Player -> PlayerWire
 playerWire player = proc action -> do
   (state', entity') <- continually $ entityWire -< action
-  returnA -< player {entity = entity', state = state'}
+  returnA -< player {state = state', entity = entity'}
   where entityWire = pure (Dead, Nothing) . Wire.until (== Just Spawn) -->
                      pure (Spawning, Nothing) . for 3 -->
                      pure Alive &&& spawnEntityWire

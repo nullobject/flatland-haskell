@@ -11,7 +11,8 @@ data Action =
     Spawn
   | Idle
   | Attack
-  | Move
+  | Forward
+  | Reverse
   | Turn Direction
   deriving (Eq, Generic, Show)
 
