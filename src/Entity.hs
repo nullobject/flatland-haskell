@@ -8,6 +8,7 @@ import qualified Control.Wire as Wire
 import           Core
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
+import           Data.VectorSpace
 import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
@@ -22,12 +23,12 @@ instance ToJSON State where
 
 -- An entity is an actor in the world.
 data Entity = Entity
-  { id       :: Identifier
-  , age      :: Age
-  , position :: Vector
-  , velocity :: Vector
-  , health   :: Health
-  , state    :: State
+  { id        :: Identifier
+  , age       :: Age
+  , direction :: Direction
+  , position  :: Vector
+  , health    :: Health
+  , state     :: State
   } deriving (Generic, Show)
 
 instance ToJSON Entity
@@ -40,22 +41,26 @@ empty :: Identifier -> Entity
 empty identifier = Entity
   { Entity.id = identifier
   , age       = 0
-  , position  = zeroVector
-  , velocity  = zeroVector
+  , direction = 0
+  , position  = zeroV
   , health    = 100
   , state     = Alive
   }
 
+directionWire :: MyWire (Maybe Action) Direction
+directionWire = accum1 f 0
+  where
+    f direction (Just (Turn direction')) = direction'
+    f direction _ = direction
+
+positionWire :: MyWire (Direction, Maybe Action) Vector
+positionWire = accum1 f zeroV
+  where
+    f position (direction, Just Move) = position ^+^ dir2vec direction
+    f position _ = position
+
 stateWire :: MyWire Int State
-stateWire = pure Alive . when (< 3) <|> Wire.empty
-
-accelerationWire :: MyWire (Maybe Action) Vector
-accelerationWire = execute_ action
-  where action (Just (Move direction)) = return direction
-        action _                       = return zeroVector
-
-healthWire :: MyWire a Int
-healthWire = pure 100
+stateWire = pure Alive . when (< 100) <|> Wire.empty
 
 -- Returns a new entity wire given an initial entity state.
 --
@@ -63,15 +68,14 @@ healthWire = pure 100
 entityWire :: Entity -> EntityWire
 entityWire entity = proc action -> do
   age' <- countFrom 0 -< 1
-  acceleration' <- accelerationWire -< action
-  velocity' <- integral1_ zeroVector -< acceleration'
-  position' <- integral1_ zeroVector -< velocity'
-  health' <- healthWire -< ()
+  direction' <- directionWire -< action
+  position' <- positionWire -< (direction', action)
+  health' <- pure 100 -< ()
   state' <- stateWire -< age'
   returnA -< Just entity
-    { age      = age'
-    , position = position'
-    , velocity = velocity'
-    , health   = health'
-    , state    = state'
+    { age       = age'
+    , direction = direction'
+    , position  = position'
+    , health    = health'
+    , state     = state'
     }

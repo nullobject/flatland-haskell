@@ -5,12 +5,14 @@ module Action where
 import Data.Aeson
 import GHC.Generics (Generic)
 
+type Direction = Double
+
 data Action =
     Spawn
   | Idle
   | Attack
-  | Move (Double, Double)
-  | Turn Int
+  | Move
+  | Turn Direction
   deriving (Eq, Generic, Show)
 
 instance FromJSON Action
