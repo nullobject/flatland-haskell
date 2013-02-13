@@ -14,8 +14,10 @@ import           Identifier
 import           Prelude hiding ((.), id)
 
 data State =
-    Dead
-  | Alive
+    Idle
+  | Attacking
+  | Moving
+  | Turning
   deriving (Eq, Generic, Show)
 
 instance ToJSON State where
@@ -44,34 +46,40 @@ empty identifier = Entity
   , direction = 0
   , position  = zeroV
   , health    = 100
-  , state     = Alive
+  , state     = Entity.Idle
   }
 
-directionWire :: MyWire (Maybe Action) Direction
-directionWire = accum1 f 0
-  where
-    f direction (Just (Turn direction')) = direction'
-    f direction _ = direction
+directionWire :: Direction -> MyWire (Maybe Action) Direction
+directionWire = accum1 f
+  where f direction (Just (Turn direction')) = direction'
+        f direction _                        = direction
 
-positionWire :: MyWire (Direction, Maybe Action) Vector
-positionWire = accum1 f zeroV
-  where
-    f position (direction, Just Move) = position ^+^ dir2vec direction
-    f position _ = position
+positionWire :: Vector -> MyWire (Direction, Maybe Action) Vector
+positionWire = accum1 f
+  where f position (direction, Just Move) = position ^+^ dir2vec direction
+        f position _                      = position
 
-stateWire :: MyWire Int State
-stateWire = pure Alive . when (< 100) <|> Wire.empty
+-- The health wire inhibits when the entity dies.
+--
+-- TODO: health should depend on collisions with other entities.
+healthWire :: Health -> MyWire Age Health
+healthWire health0 = pure health0 . when (< 10) <|> Wire.empty
+
+stateWire :: MyWire (Maybe Action) State
+stateWire = execute_ f
+  where f (Just Attack)   = return Entity.Attacking
+        f (Just Move)     = return Entity.Moving
+        f (Just (Turn _)) = return Entity.Turning
+        f _               = return Entity.Idle
 
 -- Returns a new entity wire given an initial entity state.
---
--- The entity wire inhibits when the entity dies.
 entityWire :: Entity -> EntityWire
 entityWire entity = proc action -> do
-  age' <- countFrom 0 -< 1
-  direction' <- directionWire -< action
-  position' <- positionWire -< (direction', action)
-  health' <- pure 100 -< ()
-  state' <- stateWire -< age'
+  age' <- countFrom age0 -< 1
+  direction' <- directionWire direction0 -< action
+  position' <- positionWire position0 -< (direction', action)
+  health' <- healthWire health0 -< age'
+  state' <- stateWire -< action
   returnA -< Just entity
     { age       = age'
     , direction = direction'
@@ -79,3 +87,7 @@ entityWire entity = proc action -> do
     , health    = health'
     , state     = state'
     }
+  where age0       = age entity
+        direction0 = direction entity
+        position0  = position entity
+        health0    = health entity
