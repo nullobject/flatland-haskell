@@ -51,27 +51,39 @@ empty identifier = Entity
   , energy    = 100
   }
 
+-- If the entity has enough energy then it returns the updated energy value and
+-- the action. Otherwise it returns the original energy value and defaults to
+-- the idle action.
+energyActionWire :: (Energy, Action) -> MyWire Action (Energy, Action)
+energyActionWire = accum1 update
+  where
+    -- Returns a new energy value and action from the input action.
+    update (energy, _) action = doAction energy $ calculateAction energy action
+
+    -- Returns a new energy action pair.
+    doAction energy action = (min 100 $ energy + cost action, action)
+
+    -- Ensures the entity has enough energy to perform the action.
+    calculateAction energy action = if energy + cost action >= 0
+                                    then action
+                                    else Action.Idle
+
 directionWire :: Direction -> MyWire Action Direction
-directionWire = accum1 f
-  where f direction (Turn direction') = direction'
-        f direction _                 = direction
+directionWire = accum1 update
+  where update direction (Turn direction') = direction'
+        update direction _                 = direction
 
 positionWire :: Vector -> MyWire (Direction, Action) Vector
-positionWire = accum1 f
-  where f position (direction, Forward) = position ^+^ dir2vec direction
-        f position (direction, Reverse) = position ^-^ dir2vec direction
-        f position _                    = position
+positionWire = accum1 update
+  where update position (direction, Forward) = position ^+^ dir2vec direction
+        update position (direction, Reverse) = position ^-^ dir2vec direction
+        update position _                    = position
 
 -- The health wire inhibits when the entity dies.
 --
 -- TODO: health should depend on collisions with other entities.
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100) <|> Wire.empty
-
-energyWire :: Energy -> MyWire Action Energy
-energyWire = accum1 f
-  where f energy Action.Idle = energy + 10
-        f energy _           = energy - 10
 
 stateWire :: MyWire Action State
 stateWire = execute_ $ \action -> return $ case action of
@@ -84,12 +96,12 @@ stateWire = execute_ $ \action -> return $ case action of
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
 entityWire entity = proc action -> do
-  state'     <- stateWire                -< action
-  age'       <- countFrom age0           -< 1
-  direction' <- directionWire direction0 -< action
-  position'  <- positionWire position0   -< (direction', action)
-  health'    <- healthWire health0       -< age'
-  energy'    <- energyWire energy0       -< action
+  (energy', action') <- energyActionWire energyAction0 -< action
+  state'             <- stateWire                      -< action'
+  age'               <- countFrom age0                 -< 1
+  direction'         <- directionWire direction0       -< action'
+  position'          <- positionWire position0         -< (direction', action')
+  health'            <- healthWire health0             -< age'
 
   returnA -< Just entity { state     = state'
                          , age       = age'
@@ -99,8 +111,8 @@ entityWire entity = proc action -> do
                          , energy    = energy'
                          }
 
-  where age0       = age entity
-        direction0 = direction entity
-        position0  = position entity
-        health0    = health entity
-        energy0    = energy entity
+  where age0          = age entity
+        direction0    = direction entity
+        health0       = health entity
+        position0     = position entity
+        energyAction0 = (energy entity, Action.Idle)
