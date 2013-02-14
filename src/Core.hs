@@ -4,17 +4,12 @@ import Action
 import Control.Wire
 import Identifier
 
-type Age = Int
-
-type Health = Int
-
-type Score = Int
-
+type Age     = Int
+type Health  = Int
+type Energy  = Int
 type Message = (Identifier, Action)
-
-type Vector = (Double, Double)
-
-type MyWire = Wire LastException IO
+type Vector  = (Double, Double)
+type MyWire  = Wire LastException IO
 
 readMaybe :: (Read a) => String -> Maybe a
 readMaybe s =
@@ -26,5 +21,6 @@ readMaybe s =
 continually :: MyWire a b -> MyWire a b
 continually wire = switchBy (const wire) wire
 
+-- Converts the given direction (in radians) to a unit vector.
 dir2vec :: Direction -> Vector
 dir2vec d = (cos d, sin d)

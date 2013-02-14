@@ -31,6 +31,7 @@ data Entity = Entity
   , direction :: Direction
   , position  :: Vector
   , health    :: Health
+  , energy    :: Energy
   } deriving (Generic, Show)
 
 instance ToJSON Entity
@@ -47,6 +48,7 @@ empty identifier = Entity
   , direction = 0
   , position  = zeroV
   , health    = 100
+  , energy    = 100
   }
 
 directionWire :: Direction -> MyWire (Maybe Action) Direction
@@ -66,6 +68,11 @@ positionWire = accum1 f
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100) <|> Wire.empty
 
+energyWire :: Energy -> MyWire (Maybe Action) Energy
+energyWire = accum1 f
+  where f energy (Just Action.Idle) = energy + 10
+        f energy _                  = energy - 10
+
 stateWire :: MyWire (Maybe Action) State
 stateWire = execute_ $ \action -> return $ case action of
   Just Attack   -> Entity.Attacking
@@ -82,15 +89,18 @@ entityWire entity = proc action -> do
   direction' <- directionWire direction0 -< action
   position'  <- positionWire position0   -< (direction', action)
   health'    <- healthWire health0       -< age'
+  energy'    <- energyWire energy0       -< action
 
   returnA -< Just entity { state     = state'
                          , age       = age'
                          , direction = direction'
                          , position  = position'
                          , health    = health'
+                         , energy    = energy'
                          }
 
   where age0       = age entity
         direction0 = direction entity
         position0  = position entity
         health0    = health entity
+        energy0    = energy entity
