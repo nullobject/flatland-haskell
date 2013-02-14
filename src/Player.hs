@@ -39,7 +39,7 @@ data Player = Player
 instance ToJSON Player
 
 -- A player wire takes a message and produces a new player state.
-type PlayerWire = MyWire (Maybe Action) Player
+type PlayerWire = MyWire Action Player
 
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
@@ -52,7 +52,7 @@ empty identifier = Player
   }
 
 -- Spawns a new entity.
-spawnEntityWire :: MyWire (Maybe Action) (Maybe Entity)
+spawnEntityWire :: MyWire Action (Maybe Entity)
 spawnEntityWire = mkGen $ \dt action -> do
   identifier <- Identifier.nextRandom
   let wire = Entity.entityWire $ Entity.empty identifier
@@ -66,7 +66,7 @@ playerWire :: Player -> PlayerWire
 playerWire player = proc action -> do
   (state', entity') <- continually $ entityWire -< action
   returnA -< player {state = state', entity = entity'}
-  where entityWire = pure (Dead, Nothing) . Wire.until (== Just Spawn) -->
+  where entityWire = pure (Dead, Nothing) . Wire.until (== Spawn) -->
                      pure (Spawning, Nothing) . for 3 -->
                      pure Alive &&& spawnEntityWire
 
@@ -85,7 +85,7 @@ routeWire constructor = route Map.empty
       let playerWireMap' = foldl spawn playerWireMap $ Map.keys actionMap
 
       -- Step the player wires, supplying the optional actions.
-      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (Map.lookup identifier actionMap)) playerWireMap'
+      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
 
       -- WTF does this do?
       let resx = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res

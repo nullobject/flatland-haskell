@@ -37,7 +37,7 @@ data Entity = Entity
 instance ToJSON Entity
 
 -- An entity wire takes a message and produces a new entity state.
-type EntityWire = MyWire (Maybe Action) (Maybe Entity)
+type EntityWire = MyWire Action (Maybe Entity)
 
 -- Returns a new entity.
 empty :: Identifier -> Entity
@@ -51,16 +51,16 @@ empty identifier = Entity
   , energy    = 100
   }
 
-directionWire :: Direction -> MyWire (Maybe Action) Direction
+directionWire :: Direction -> MyWire Action Direction
 directionWire = accum1 f
-  where f direction (Just (Turn direction')) = direction'
-        f direction _                        = direction
+  where f direction (Turn direction') = direction'
+        f direction _                 = direction
 
-positionWire :: Vector -> MyWire (Direction, Maybe Action) Vector
+positionWire :: Vector -> MyWire (Direction, Action) Vector
 positionWire = accum1 f
-  where f position (direction, Just Forward) = position ^+^ dir2vec direction
-        f position (direction, Just Reverse) = position ^-^ dir2vec direction
-        f position _                         = position
+  where f position (direction, Forward) = position ^+^ dir2vec direction
+        f position (direction, Reverse) = position ^-^ dir2vec direction
+        f position _                    = position
 
 -- The health wire inhibits when the entity dies.
 --
@@ -68,18 +68,18 @@ positionWire = accum1 f
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100) <|> Wire.empty
 
-energyWire :: Energy -> MyWire (Maybe Action) Energy
+energyWire :: Energy -> MyWire Action Energy
 energyWire = accum1 f
-  where f energy (Just Action.Idle) = energy + 10
-        f energy _                  = energy - 10
+  where f energy Action.Idle = energy + 10
+        f energy _           = energy - 10
 
-stateWire :: MyWire (Maybe Action) State
+stateWire :: MyWire Action State
 stateWire = execute_ $ \action -> return $ case action of
-  Just Attack   -> Entity.Attacking
-  Just Forward  -> Entity.Moving
-  Just Reverse  -> Entity.Moving
-  Just (Turn _) -> Entity.Turning
-  _             -> Entity.Idle
+  Attack   -> Entity.Attacking
+  Forward  -> Entity.Moving
+  Reverse  -> Entity.Moving
+  (Turn _) -> Entity.Turning
+  _        -> Entity.Idle
 
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
