@@ -2,7 +2,6 @@ module Main where
 
 import Test.Framework (defaultMain)
 
-import qualified EntityTest
-import qualified WorldTest
+import qualified GeometryTest
 
-main = defaultMain [EntityTest.test, WorldTest.test]
+main = defaultMain GeometryTest.tests
