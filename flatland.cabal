@@ -51,10 +51,23 @@ test-suite hunit
   build-depends:
       aeson
     , base
+    , blaze-builder
+    , bytestring
+    , conduit
     , containers
     , ghc-prim
+    , http-types
+    , keys
     , mtl
+    , netwire
+    , random
+    , stm
     , test-framework
     , test-framework-hunit
+    , text
     , uuid
+    , vector-space
+    , wai
+    , wai-eventsource
+    , warp
     , HUnit
