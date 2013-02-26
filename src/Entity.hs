@@ -9,6 +9,7 @@ import           Core
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
 import           Data.VectorSpace
+import           Geometry (Point)
 import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
@@ -29,7 +30,7 @@ data Entity = Entity
   , state     :: State
   , age       :: Age
   , direction :: Direction
-  , position  :: Vector
+  , position  :: Point
   , health    :: Health
   , energy    :: Energy
   } deriving (Generic, Show)
@@ -73,11 +74,12 @@ directionWire = accum1 update
   where update direction (Turn direction') = direction'
         update direction _                 = direction
 
-positionWire :: Vector -> MyWire (Direction, Action) Vector
+positionWire :: Point -> MyWire (Direction, Action) Point
 positionWire = accum1 update
   where update position (direction, Forward) = position ^+^ dir2vec direction
         update position (direction, Reverse) = position ^-^ dir2vec direction
         update position _                    = position
+        dir2vec d = (cos d, sin d)
 
 -- The health wire inhibits when the entity dies.
 --

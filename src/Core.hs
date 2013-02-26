@@ -20,17 +20,3 @@ readMaybe s =
 -- Another wire is constructed whenever the given wire wire inhibits.
 continually :: MyWire a b -> MyWire a b
 continually wire = switchBy (const wire) wire
-
--- Converts the given direction (in radians) to a unit vector.
-dir2vec :: Direction -> Vector
-dir2vec d = (cos d, sin d)
-
--- Returns the cost of action.
-cost :: Action -> Energy
-cost action = case action of
-  Idle    ->  10
-  Attack  -> -30
-  Forward -> -20
-  Reverse -> -20
-  Turn _  -> -20
-  _       ->   0
