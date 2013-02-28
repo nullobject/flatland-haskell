@@ -85,7 +85,7 @@ positionWire = accum1 update
 --
 -- TODO: health should depend on collisions with other entities.
 healthWire :: Health -> MyWire Age Health
-healthWire health0 = pure health0 . when (< 100) <|> Wire.empty
+healthWire health0 = pure health0 . when (< 100000) <|> Wire.empty
 
 stateWire :: MyWire Action State
 stateWire = execute_ $ \action -> return $ case action of
