@@ -8,7 +8,7 @@ import Geometry
 
 main = defaultMain tests
 
-tests = [testAngleBetween, testPointSegmentDistance, testIntersectLines]
+tests = [testAngleBetween, testPointSegmentDistance, testIntersectLines, testIntersects]
 
 testAngleBetween = testGroup "angleBetween"
   [ testCase "test1" test1
@@ -40,3 +40,24 @@ testIntersectLines = testGroup "intersectLines"
         test2 = intersectLines (-1,  1) (1,  1) (-1, 1) (1, -1) @?= (-1,  1)
         test3 = intersectLines (-1, -1) (1, -1) (-1, 1) (1, -1) @?= ( 1, -1)
         test4 = intersectLines (-1, -1) (1,  1) (-1, 1) (1,  1) @?= ( 1,  1)
+
+testIntersects = testGroup "intersects"
+  [ testCase "test1" test1
+  , testCase "test2" test2
+  , testCase "test3" test3
+  , testCase "test4" test4
+  , testCase "test5" test5
+  , testCase "test6" test6
+  , testCase "test7" test7
+  , testCase "test8" test8
+  , testCase "test9" test9 ]
+  where triangle = Triangle (0, 0) (1, 1) (1, 0)
+        test1 = intersects ( 0,  0) triangle @?= True
+        test2 = intersects ( 1,  1) triangle @?= True
+        test3 = intersects ( 1,  0) triangle @?= True
+        test4 = intersects ( 0, -1) triangle @?= False
+        test5 = intersects (-1,  0) triangle @?= False
+        test6 = intersects ( 1,  2) triangle @?= False
+        test7 = intersects ( 2,  1) triangle @?= False
+        test8 = intersects ( 2,  0) triangle @?= False
+        test9 = intersects ( 1, -1) triangle @?= False
