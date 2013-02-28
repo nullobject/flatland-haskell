@@ -1,14 +1,20 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Geometry where
 
 import Core
+import Data.Aeson (ToJSON)
 import Data.AffineSpace
 import Data.VectorSpace
+import GHC.Generics (Generic)
 
 type Angle = Double
 type Point = Vector
 
 -- A line segment between two points.
-data Segment = Segment Point Point deriving (Eq, Show)
+data Segment = Segment Point Point deriving (Generic, Eq, Show)
+
+instance ToJSON Segment
 
 data Triangle = Triangle Point Point Point deriving (Eq, Show)
 
