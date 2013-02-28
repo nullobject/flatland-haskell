@@ -8,6 +8,7 @@ import           Data.Aeson (ToJSON)
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import           Entity (Entity)
+import           Geometry (Segment (..))
 import           GHC.Generics (Generic)
 import           Identifier
 import           Player (Player)
@@ -18,6 +19,7 @@ import           Prelude hiding ((.), id)
 data World = World
   { age      :: Age
   , players  :: [Player]
+  , segments :: [Segment]
   } deriving (Generic, Show)
 
 instance ToJSON World
@@ -27,10 +29,19 @@ type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
 empty :: World
-empty = World
-  { age     = 0
-  , players = []
-  }
+empty =
+  World { age      = 0
+        , players  = []
+        , segments = segments
+        }
+  where segments = [ Segment (-1,  1) ( 1,  1)
+                   , Segment ( 1,  1) ( 1, -1)
+                   , Segment ( 1, -1) (-1, -1)
+                   , Segment (-1, -1) (-1,  1)
+                   , Segment (-5,  5) ( 5,  5)
+                   , Segment ( 5,  5) ( 5, -5)
+                   , Segment ( 5, -5) (-5, -5)
+                   , Segment (-5, -5) (-5,  5) ]
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player
