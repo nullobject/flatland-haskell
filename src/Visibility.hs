@@ -39,9 +39,11 @@ calculateEndpoints origin segment@(Segment a b) =
         begin1 = angleDifference angle1 angle2 > 0
         begin2 = not begin1
 
--- Calculates the triangles from the endpoints, making two passes over the
+-- Calculates a list of triangles from a list of endpoints. The algorithm makes
+-- two passes over the list of endpoints and snaps each of the resulting
+-- triangles.
 calculateTriangles :: Point -> [Endpoint] -> [Triangle]
-calculateTriangles origin endpoints = triangles
+calculateTriangles origin endpoints = map snapTriangle triangles
   where (angle, segments, _) = foldl step' (0, [], []) endpoints'
         (_, _, triangles)    = foldl step' (angle, segments, []) endpoints'
         endpoints' = sort endpoints
@@ -83,11 +85,14 @@ comparator origin p q = d1 `compare` d2
 -- with the segment.
 calculateTriangle :: Angle -> Angle -> Point -> Maybe Segment -> Triangle
 
-calculateTriangle angle1 angle2 a (Just (Segment b c)) = Triangle a p q
+calculateTriangle angle1 angle2 a (Just (Segment b c))
+  | t == 0    = Triangle a c b -- The lines don't intersect.
+  | otherwise = Triangle a p q -- The lines intersect.
   where d = a + (cos angle1, sin angle1)
         e = a + (cos angle2, sin angle2)
         p = intersectLines b c a d
         q = intersectLines b c a e
+        t = (c - b) <*> (d - a)
 
 calculateTriangle angle1 angle2 a Nothing = Triangle a p q
   where b = a + (cos angle1, sin angle1) ^* 500
@@ -96,3 +101,10 @@ calculateTriangle angle1 angle2 a Nothing = Triangle a p q
         e = a + (cos angle2, sin angle2)
         p = intersectLines b c a d
         q = intersectLines b c a e
+
+snapTriangle :: Triangle -> Triangle
+snapTriangle (Triangle a b c) = Triangle (snapPoint a) (snapPoint b) (snapPoint c)
+
+snapPoint :: Point -> Point
+snapPoint (p1, p2) = (round' p1 8, round' p2 8)
+  where round' f n = (fromInteger $ round $ f * (10 ^ n)) / (10.0 ^^ n)
