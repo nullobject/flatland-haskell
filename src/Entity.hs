@@ -74,6 +74,10 @@ directionWire = accum1 update
   where update direction (Turn direction') = direction'
         update direction _                 = direction
 
+-- The position wire returns the current position for the entity. It moves the
+-- entity in the given direction when it receives a forward/reverse action.
+--
+-- TODO: Detect collisions with wall segments and other entities.
 positionWire :: Point -> MyWire (Direction, Action) Point
 positionWire = accum1 update
   where update position (direction, Forward) = position ^+^ dir2vec direction
@@ -81,9 +85,10 @@ positionWire = accum1 update
         update position _                    = position
         dir2vec d = (cos d, sin d)
 
--- The health wire inhibits when the entity dies.
+-- The health wire returns the current health of the entity. It inhibits when
+-- the entity dies.
 --
--- TODO: health should depend on collisions with other entities.
+-- TODO: Health should depend on collisions with other entities.
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100000) <|> Wire.empty
 
