@@ -19,3 +19,8 @@ readMaybe s =
 -- Another wire is constructed whenever the given wire wire inhibits.
 continually :: MyWire a b -> MyWire a b
 continually wire = switchBy (const wire) wire
+
+-- Rotates the elements of the list to the right.
+rotate :: [a] -> [a]
+rotate [] = []
+rotate (x:xs) = xs ++ [x]
