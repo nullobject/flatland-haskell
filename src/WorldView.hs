@@ -6,7 +6,7 @@ module WorldView
   ) where
 
 import           Data.Aeson (ToJSON)
-import           Geometry (Segment (..), Triangle (..))
+import           Geometry (Triangle)
 import qualified Geometry
 import           GHC.Generics (Generic)
 import           Entity (Entity)
@@ -14,14 +14,14 @@ import qualified Entity
 import           Player (Player)
 import qualified Player
 import qualified Visibility
-import           World (World)
+import           World (World, Tile)
 import qualified World
 
 data WorldView = WorldView
   { age      :: Int
   , player   :: Player
   , entities :: [Entity]
-  , segments :: [Segment]
+  , tiles    :: [Tile]
   } deriving (Generic, Show)
 
 instance ToJSON WorldView
@@ -32,21 +32,23 @@ forPlayer player world =
   WorldView { age      = age
             , player   = player
             , entities = visibleEntities
-            , segments = visibleSegments
+            , tiles    = visibleTiles
             }
 
   where age      = World.age world
         entities = World.entities world
-        segments = World.segments world
+        polygons = World.polygons world
 
         visibility = case Player.entity player of
-                     Just entity -> Visibility.calculateVisibility (Entity.position entity) segments
+                     Just entity -> Visibility.calculateVisibility (Entity.position entity) polygons
                      Nothing     -> []
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
-        visibleSegments = map (\(Triangle a b c) -> Segment b c) visibility
 
--- Returns true if the entity is in the visibility polygon.
+        -- TODO: include only visible tiles.
+        visibleTiles = World.tiles world
+
+-- Returns true if the entity is in the visibility manifold.
 entityVisible :: Entity -> [Triangle] -> Bool
 entityVisible entity visibility = any (Geometry.intersects position) visibility
   where position = Entity.position entity

@@ -5,21 +5,35 @@ module World where
 import           Control.Wire
 import           Core
 import           Data.Aeson (ToJSON)
+import           Data.Bits
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
+import           Data.VectorSpace
 import           Entity (Entity)
-import           Geometry (Segment (..))
+import           Geometry (Polygon (..))
 import           GHC.Generics (Generic)
 import           Identifier
 import           Player (Player)
 import qualified Player
 import           Prelude hiding ((.), id)
 
+-- A tile represents a cell in the world grid. The bits of the tile value
+-- represent properties of the tile:
+--
+-- bit 7    - Whether a player can spawn in the tile.
+-- bit 6    - Whether the tile is opaque to entities.
+-- bit 5    - Whether the tile can collide with entities.
+-- bits 4-0 - The tile index.
+type Tile = Int
+
+type Size = Int
+
 -- A world contains a list of players.
 data World = World
   { age      :: Age
   , players  :: [Player]
-  , segments :: [Segment]
+  , polygons :: [Polygon]
+  , tiles    :: [Tile]
   } deriving (Generic, Show)
 
 instance ToJSON World
@@ -28,20 +42,32 @@ instance ToJSON World
 type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
-empty :: World
-empty =
+empty :: [Tile] -> World
+empty tiles =
   World { age      = 0
         , players  = []
-        , segments = segments
+        , polygons = polygons
+        , tiles    = tiles
         }
-  where segments = [ Segment (-1,  1) ( 1,  1)
-                   , Segment ( 1,  1) ( 1, -1)
-                   , Segment ( 1, -1) (-1, -1)
-                   , Segment (-1, -1) (-1,  1)
-                   , Segment (-5,  5) ( 5,  5)
-                   , Segment ( 5,  5) ( 5, -5)
-                   , Segment ( 5, -5) (-5, -5)
-                   , Segment (-5, -5) (-5,  5) ]
+
+  where polygons = Maybe.mapMaybe (calculatePolygon size) $ zip [0..] tiles
+        size = truncate . sqrt . fromIntegral . length $ tiles
+
+-- Calculates the polygon for the given world size and index/tile tuple.
+calculatePolygon :: Size -> (Int, Tile) -> Maybe Polygon
+calculatePolygon size (index, tile)
+  | opaque tile = Just (Polygon [ (x index,     y index    )
+                                , (x index + 1, y index    )
+                                , (x index + 1, y index + 1)
+                                , (x index,     y index + 1) ] )
+  | otherwise = Nothing
+
+  where opaque tile = tile .&. (bit 6) /= 0
+
+        x n = fromIntegral $ (n `mod` size) - halfSize
+        y n = fromIntegral $ (n `div` size) - halfSize
+
+        halfSize = size `div` 2
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player

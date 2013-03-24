@@ -13,11 +13,16 @@ type Angle  = Double
 type Point  = Vector
 
 -- A line segment between two points.
-data Segment = Segment Point Point deriving (Generic, Eq, Show)
+data Segment = Segment Point Point deriving (Eq, Show)
 
-instance ToJSON Segment
-
+-- A triangle is a 3-sided shape.
 data Triangle = Triangle Point Point Point deriving (Eq, Show)
+
+-- A polygon is an n-sided shape where the consecutive verticies are connected
+-- by a line segment.
+data Polygon = Polygon [Point] deriving (Generic, Eq, Show)
+
+instance ToJSON Polygon
 
 -- Calculates the angle between two points.
 angleBetween :: Point -> Point -> Angle
