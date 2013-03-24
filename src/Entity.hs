@@ -37,7 +37,7 @@ data Entity = Entity
 
 instance ToJSON Entity
 
--- An entity wire takes a message and produces a new entity state.
+-- An entity wire takes an action and produces a new entity state.
 type EntityWire = MyWire Action (Maybe Entity)
 
 -- Returns a new entity.

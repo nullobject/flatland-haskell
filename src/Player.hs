@@ -38,7 +38,7 @@ data Player = Player
 
 instance ToJSON Player
 
--- A player wire takes a message and produces a new player state.
+-- A player wire takes an action and produces a new player state.
 type PlayerWire = MyWire Action Player
 
 -- A map from an identifier to a player wire.

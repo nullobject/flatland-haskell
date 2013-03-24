@@ -45,7 +45,7 @@ forPlayer player world =
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
 
-        -- TODO: include only visible tiles.
+        -- TODO: Include only visible tiles.
         visibleTiles = World.tiles world
 
 -- Returns true if the entity is in the visibility manifold.
