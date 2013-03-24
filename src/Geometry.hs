@@ -8,8 +8,9 @@ import Data.AffineSpace
 import Data.VectorSpace
 import GHC.Generics (Generic)
 
-type Angle = Double
-type Point = Vector
+type Vector = (Double, Double)
+type Angle  = Double
+type Point  = Vector
 
 -- A line segment between two points.
 data Segment = Segment Point Point deriving (Generic, Eq, Show)

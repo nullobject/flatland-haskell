@@ -8,7 +8,6 @@ type Age     = Int
 type Health  = Int
 type Energy  = Int
 type Message = (Identifier, Action)
-type Vector  = (Double, Double)
 type MyWire  = Wire LastException IO
 
 readMaybe :: (Read a) => String -> Maybe a
