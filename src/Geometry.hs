@@ -77,3 +77,7 @@ intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
 
         u = (dot11 * dot02 - dot01 * dot12) * invDenom
         v = (dot00 * dot12 - dot01 * dot02) * invDenom
+
+-- Returns the edges (line segments) of the polygon.
+calculateSegments :: Polygon -> [Segment]
+calculateSegments (Polygon vertices) = zipWith Segment vertices (rotate vertices)

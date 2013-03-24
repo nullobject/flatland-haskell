@@ -4,6 +4,7 @@ module Visibility
   , Endpoint (..)
   ) where
 
+import Core (rotate)
 import Data.List (delete, insertBy, sort)
 import Data.VectorSpace
 import Geometry
@@ -22,12 +23,13 @@ instance Ord Endpoint where
 
 -- Returns a list of triangles representing the area visible from the origin.
 --
--- The algorithm casts rays from the origin to the points in each segment,
+-- The algorithm casts rays from the origin to the vertices in each polygon,
 -- calculating the triangles subtended by the rays intersecting with the
--- nearest segments.
-calculateVisibility :: Point -> [Segment] -> [Triangle]
-calculateVisibility origin segments = calculateTriangles origin endpoints
+-- nearest edge.
+calculateVisibility :: Point -> [Polygon] -> [Triangle]
+calculateVisibility origin polygons = calculateTriangles origin endpoints
   where endpoints = concatMap (calculateEndpoints origin) segments
+        segments = concatMap calculateSegments polygons
 
 -- Calculates the endpoints for the segment.
 calculateEndpoints :: Point -> Segment -> [Endpoint]
