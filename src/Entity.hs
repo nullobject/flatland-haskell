@@ -9,7 +9,7 @@ import           Core
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
 import           Data.VectorSpace
-import           Geometry (Point)
+import           Geometry (Point, Vector)
 import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
@@ -30,6 +30,7 @@ data Entity = Entity
   , state     :: State
   , age       :: Age
   , direction :: Direction
+  , velocity  :: Vector
   , position  :: Point
   , health    :: Health
   , energy    :: Energy
@@ -40,6 +41,9 @@ instance ToJSON Entity
 -- An entity wire takes an action and produces a new entity state.
 type EntityWire = MyWire Action (Maybe Entity)
 
+speed :: Double
+speed = 1.0
+
 -- Returns a new entity.
 empty :: Identifier -> Entity
 empty identifier = Entity
@@ -47,6 +51,7 @@ empty identifier = Entity
   , state     = Entity.Idle
   , age       = 0
   , direction = 0
+  , velocity  = zeroV
   , position  = zeroV
   , health    = 100
   , energy    = 100
@@ -74,16 +79,15 @@ directionWire = accum1 update
   where update direction (Turn direction') = direction'
         update direction _                 = direction
 
--- The position wire returns the current position for the entity. It moves the
--- entity in the given direction when it receives a forward/reverse action.
+-- The velocity wire returns the current velocity for the entity. It changes
+-- the velocity when it receives a forward/reverse action.
 --
 -- TODO: Detect collisions with wall segments and other entities.
-positionWire :: Point -> MyWire (Direction, Action) Point
-positionWire = accum1 update
-  where update position (direction, Forward) = position ^+^ dir2vec direction
-        update position (direction, Reverse) = position ^-^ dir2vec direction
-        update position _                    = position
-        dir2vec d = (cos d, sin d)
+velocityWire :: Vector -> MyWire (Direction, Action) Point
+velocityWire = accum1 update
+  where update velocity (direction, Forward) = speed *^ (cos direction, sin direction)
+        update velocity (direction, Reverse) = -speed *^ (cos direction, sin direction)
+        update velocity _                    = zeroV
 
 -- The health wire returns the current health of the entity. It inhibits when
 -- the entity dies.
@@ -107,12 +111,14 @@ entityWire entity = proc action -> do
   state'             <- stateWire                      -< action'
   age'               <- countFrom age0                 -< 1
   direction'         <- directionWire direction0       -< action'
-  position'          <- positionWire position0         -< (direction', action')
+  velocity'          <- velocityWire velocity0         -< (direction', action')
+  position'          <- integral1_ position0           -< velocity'
   health'            <- healthWire health0             -< age'
 
   returnA -< Just entity { state     = state'
                          , age       = age'
                          , direction = direction'
+                         , velocity  = velocity'
                          , position  = position'
                          , health    = health'
                          , energy    = energy'
@@ -121,5 +127,6 @@ entityWire entity = proc action -> do
   where age0          = age entity
         direction0    = direction entity
         health0       = health entity
+        velocity0     = velocity entity
         position0     = position entity
         energyAction0 = (energy entity, Action.Idle)
