@@ -20,11 +20,13 @@ testCalculateCollisions = testGroup "calculateCollisions"
   , testCase "test7"  test7
   , testCase "test8"  test8
   , testCase "test9"  test9
-  , testCase "test10" test10 ]
+  , testCase "test10" test10
+  , testCase "test11" test11 ]
 
   where a = AABB (1, 0) (0.5, 0.5)
         b = AABB (2, 0) (0.5, 0.5)
         c = AABB (4, 0) (0.5, 0.5)
+        d = AABB (4, 4) (0.5, 0.5)
 
         -- Initially overlapping.
         test1 = calculateCollisions a b (1, 0) (0, 0) @?= Just (Contact 0 0)
@@ -55,6 +57,9 @@ testCalculateCollisions = testGroup "calculateCollisions"
 
         -- Contact at quarter of the way.
         test10 = calculateCollisions a c (0, 0) (-8, 0) @?= Just (Contact 0.25 0.5)
+
+        -- Not in path.
+        test11 = calculateCollisions b d (2, 0) (0, 0) @?= Nothing
 
 testIntersectAABB = testGroup "intersectAABB"
   [ testCase "test1" test1

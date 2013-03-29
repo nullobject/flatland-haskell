@@ -27,14 +27,11 @@ calculateCollisions a b aVelocity bVelocity
   -- Initially overlapping.
   | intersectAABB a b = Just (Contact 0 0)
 
-  -- Not moving.
-  | v0 == 0 && v1 == 0 = Nothing
-
-  -- Non-intersecting and moving apart.
-  | bMax0 < aMin0 && v0 < 0 = Nothing
-  | bMin0 > aMax0 && v0 > 0 = Nothing
-  | bMax1 < aMin1 && v1 < 0 = Nothing
-  | bMin1 > aMax1 && v1 > 0 = Nothing
+  -- Non-intersecting and moving apart (or stationary) on an axis.
+  | bMax0 < aMin0 && v0 <= 0 = Nothing
+  | bMin0 > aMax0 && v0 >= 0 = Nothing
+  | bMax1 < aMin1 && v1 <= 0 = Nothing
+  | bMin1 > aMax1 && v1 >= 0 = Nothing
 
   -- Intersecting.
   | tFirst <= tLast = Just (Contact tFirst tLast)
