@@ -3,13 +3,15 @@
 module Entity where
 
 import           Action
+import           Collision
 import           Control.Wire
 import qualified Control.Wire as Wire
 import           Core
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
 import           Data.VectorSpace
-import           Geometry (Point, Vector)
+import qualified Data.Maybe as Maybe
+import           Geometry
 import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
@@ -30,10 +32,11 @@ data Entity = Entity
   , state     :: State
   , age       :: Age
   , direction :: Direction
-  , velocity  :: Vector
-  , position  :: Point
+  , position  :: Position
+  , velocity  :: Velocity
   , health    :: Health
   , energy    :: Energy
+  , contacts  :: [Contact]
   } deriving (Generic, Show)
 
 instance ToJSON Entity
@@ -41,8 +44,11 @@ instance ToJSON Entity
 -- An entity wire takes an action and produces a new entity state.
 type EntityWire = MyWire Action (Maybe Entity)
 
+extents :: Extents
+extents = (0.5, 0.5)
+
 speed :: Double
-speed = 1.0
+speed = 1
 
 -- Returns a new entity.
 empty :: Identifier -> Entity
@@ -51,10 +57,11 @@ empty identifier = Entity
   , state     = Entity.Idle
   , age       = 0
   , direction = 0
-  , velocity  = zeroV
   , position  = zeroV
+  , velocity  = zeroV
   , health    = 100
   , energy    = 100
+  , contacts  = []
   }
 
 -- If the entity has enough energy then it returns the updated energy value and
@@ -81,18 +88,17 @@ directionWire = accum1 update
 
 -- The velocity wire returns the current velocity for the entity. It changes
 -- the velocity when it receives a forward/reverse action.
---
--- TODO: Detect collisions with wall segments and other entities.
-velocityWire :: Vector -> MyWire (Direction, Action) Point
-velocityWire = accum1 update
-  where update velocity (direction, Forward) = speed *^ (cos direction, sin direction)
-        update velocity (direction, Reverse) = -speed *^ (cos direction, sin direction)
-        update velocity _                    = zeroV
+impulseWire :: MyWire (Direction, Action) Velocity
+impulseWire = execute_ $ return . update
+  where update (direction, Forward) = vector direction
+        update (direction, Reverse) = -(vector direction)
+        update _                    = zeroV
+        vector direction = (cos direction, sin direction) ^* speed
 
 -- The health wire returns the current health of the entity. It inhibits when
 -- the entity dies.
 --
--- TODO: Health should depend on collisions with other entities.
+-- TODO: Health should depend on collisions with other entities/bullets.
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100000) <|> Wire.empty
 
@@ -104,29 +110,62 @@ stateWire = execute_ $ \action -> return $ case action of
   (Turn _) -> Entity.Turning
   _        -> Entity.Idle
 
+collisionWire :: (Position, Velocity) -> MyWire Velocity (Position, Velocity, [Contact])
+collisionWire (position0, velocity0) =
+  mkPure $ \_ velocity ->
+    let (position', velocity', contacts') = collideWithMap (position0, velocity)
+    in (Right (position', velocity', contacts'), collisionWire (position', velocity'))
+
+-- TODO: Collide with map polygons.
+collideWithMap :: (Position, Velocity) -> (Position, Velocity, [Contact])
+collideWithMap (position, velocity) = (position', velocity', contacts')
+  where objects = [AABB (2.5, 0) extents, AABB (-2.5, 0) extents]
+        (_, velocity', contacts') = foldl collide (position, velocity, []) objects
+        position' = position ^+^ velocity'
+
+-- Collides with the given object and resolves any collisions.
+collide :: (Position, Velocity, [Contact]) -> AABB -> (Position, Velocity, [Contact])
+collide (position, velocity, contacts) that = (position, velocity', contacts')
+  where this      = AABB position extents
+        contact   = calculateCollisions this that velocity zeroV
+        velocity' = applyContact velocity contact
+        contacts' = contacts ++ Maybe.maybeToList contact
+
+-- Corrects the velocity for the given contact so that when the position is
+-- integrated the objects will only just be touching.
+--
+-- FIXME: Do we need an epsilon correction, can't the objects really touch?
+applyContact :: Velocity -> Maybe Contact -> Velocity
+applyContact velocity Nothing = velocity
+applyContact velocity (Just (Contact tFirst _)) = velocity'
+  where velocity' = lerp zeroV velocity (tFirst - epsilon)
+        epsilon = 0.00000001
+
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
 entityWire entity = proc action -> do
-  (energy', action') <- energyActionWire energyAction0 -< action
-  state'             <- stateWire                      -< action'
-  age'               <- countFrom age0                 -< 1
-  direction'         <- directionWire direction0       -< action'
-  velocity'          <- velocityWire velocity0         -< (direction', action')
-  position'          <- integral1_ position0           -< velocity'
-  health'            <- healthWire health0             -< age'
+  age'                              <- countFrom age0                       -< 1
+  (energy', action')                <- energyActionWire (energy0, action0)  -< action
+  state'                            <- stateWire                            -< action'
+  direction'                        <- directionWire direction0             -< action'
+  impulse'                          <- impulseWire                          -< (direction', action')
+  (position', velocity', contacts') <- collisionWire (position0, velocity0) -< impulse'
+  health'                           <- healthWire health0                   -< age'
 
   returnA -< Just entity { state     = state'
                          , age       = age'
                          , direction = direction'
-                         , velocity  = velocity'
                          , position  = position'
+                         , velocity  = velocity'
                          , health    = health'
                          , energy    = energy'
+                         , contacts  = contacts'
                          }
 
-  where age0          = age entity
+  where action0       = Action.Idle
+        age0          = age entity
         direction0    = direction entity
+        energy0       = energy entity
         health0       = health entity
-        velocity0     = velocity entity
         position0     = position entity
-        energyAction0 = (energy entity, Action.Idle)
+        velocity0     = velocity entity
