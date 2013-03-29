@@ -8,9 +8,12 @@ import Data.AffineSpace
 import Data.VectorSpace
 import GHC.Generics (Generic)
 
-type Vector = (Double, Double)
-type Angle  = Double
-type Point  = Vector
+type Vector   = (Double, Double)
+type Angle    = Double
+type Point    = Vector
+type Position = Vector
+type Velocity = Vector
+type Extents  = Vector
 
 -- A line segment between two points.
 data Segment = Segment Point Point deriving (Eq, Show)
@@ -20,7 +23,7 @@ data Triangle = Triangle Point Point Point deriving (Eq, Show)
 
 -- A polygon is an n-sided shape where the consecutive verticies are connected
 -- by a line segment.
-data Polygon = Polygon [Point] deriving (Generic, Eq, Show)
+data Polygon = Polygon [Point] deriving (Eq, Generic, Show)
 
 instance ToJSON Polygon
 

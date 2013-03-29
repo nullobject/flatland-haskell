@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Collision
   ( calculateCollisions
   , intersectAABB
@@ -5,26 +7,36 @@ module Collision
   , Contact (..)
   ) where
 
+import Data.Aeson (toJSON, ToJSON)
 import Data.VectorSpace
-import Geometry (Vector)
-
-type Velocity = Vector
-type Extents  = Vector
+import Geometry
+import GHC.Generics (Generic)
 
 -- An axis-aligned bounding box.
 data AABB = AABB Vector Extents deriving (Eq, Show)
 
 -- A collision contact.
-data Contact = Contact Double Double deriving (Eq, Show)
+data Contact = Contact Double Double deriving (Eq, Generic, Show)
+
+instance ToJSON Contact
 
 -- Calculates the collision between the two moving AABBs using the
 -- separating-axis test.
 calculateCollisions :: AABB -> AABB -> Velocity -> Velocity -> Maybe Contact
 calculateCollisions a b aVelocity bVelocity
-  -- Exit early if 'a' and 'b' are initially overlapping.
+  -- Initially overlapping.
   | intersectAABB a b = Just (Contact 0 0)
 
-  -- Time of first overlap was before time of last overlap.
+  -- Not moving.
+  | v0 == 0 && v1 == 0 = Nothing
+
+  -- Non-intersecting and moving apart.
+  | bMax0 < aMin0 && v0 < 0 = Nothing
+  | bMin0 > aMax0 && v0 > 0 = Nothing
+  | bMax1 < aMin1 && v1 < 0 = Nothing
+  | bMin1 > aMax1 && v1 > 0 = Nothing
+
+  -- Intersecting.
   | tFirst <= tLast = Just (Contact tFirst tLast)
 
   | otherwise = Nothing
@@ -59,4 +71,7 @@ extents :: AABB -> (Extents, Extents)
 extents (AABB centre extents) = (centre - extents, centre + extents)
 
 intersectAABB :: AABB -> AABB -> Bool
-intersectAABB (AABB centreA radiusA) (AABB centreB radiusB) = abs (centreA - centreB) <= (radiusA + radiusB)
+intersectAABB (AABB (aCentre0, aCentre1) (aRadius0, aRadius1)) (AABB (bCentre0, bCentre1) (bRadius0, bRadius1))
+  | abs (aCentre0 - bCentre0) > (aRadius0 + bRadius0) = False
+  | abs (aCentre1 - bCentre1) > (aRadius1 + bRadius1) = False
+  | otherwise = True

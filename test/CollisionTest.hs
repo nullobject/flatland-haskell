@@ -11,19 +11,50 @@ main = defaultMain tests
 tests = [testCalculateCollisions, testIntersectAABB]
 
 testCalculateCollisions = testGroup "calculateCollisions"
-  [ testCase "test1" test1
-  , testCase "test2" test2
-  , testCase "test3" test3
-  , testCase "test4" test4 ]
+  [ testCase "test1"  test1
+  , testCase "test2"  test2
+  , testCase "test3"  test3
+  , testCase "test4"  test4
+  , testCase "test5"  test5
+  , testCase "test6"  test6
+  , testCase "test7"  test7
+  , testCase "test8"  test8
+  , testCase "test9"  test9
+  , testCase "test10" test10 ]
 
   where a = AABB (1, 0) (0.5, 0.5)
         b = AABB (2, 0) (0.5, 0.5)
         c = AABB (4, 0) (0.5, 0.5)
 
+        -- Initially overlapping.
         test1 = calculateCollisions a b (1, 0) (0, 0) @?= Just (Contact 0 0)
-        test2 = calculateCollisions b c (2, 0) (0, 0) @?= Just (Contact 0.5 1)
-        test3 = calculateCollisions b c (4, 0) (0, 0) @?= Just (Contact 0.25 0.75)
-        test4 = calculateCollisions a c (1, 0) (0, 0) @?= Nothing
+
+        -- Not moving.
+        test2 = calculateCollisions b c (0, 0) (0, 0) @?= Nothing
+
+        -- Not moving fast enough.
+        test3 = calculateCollisions b c (0.5, 0) (0, 0) @?= Nothing
+
+        -- Moving in the opposite direction.
+        test4 = calculateCollisions b c (-2, 0) (0, 0) @?= Nothing
+
+        -- Contact at half of the way.
+        test5 = calculateCollisions b c (2, 0) (0, 0) @?= Just (Contact 0.5 1)
+
+        -- Contact at quarter of the way.
+        test6 = calculateCollisions b c (4, 0) (0, 0) @?= Just (Contact 0.25 0.75)
+
+        -- Not moving fast enough.
+        test7 = calculateCollisions a c (0, 0) (-0.5, 0) @?= Nothing
+
+        -- Moving in the opposite direction.
+        test8 = calculateCollisions a c (0, 0) (4, 0) @?= Nothing
+
+        -- Contact at half of the way.
+        test9 = calculateCollisions a c (0, 0) (-4, 0) @?= Just (Contact 0.5 1)
+
+        -- Contact at quarter of the way.
+        test10 = calculateCollisions a c (0, 0) (-8, 0) @?= Just (Contact 0.25 0.5)
 
 testIntersectAABB = testGroup "intersectAABB"
   [ testCase "test1" test1
