@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module Collision
   ( calculateCollisions
   , intersectAABB
@@ -10,15 +8,12 @@ module Collision
 import Data.Aeson (toJSON, ToJSON)
 import Data.VectorSpace
 import Geometry
-import GHC.Generics (Generic)
 
 -- An axis-aligned bounding box.
 data AABB = AABB Vector Extents deriving (Eq, Show)
 
 -- A collision contact.
-data Contact = Contact Double Double deriving (Eq, Generic, Show)
-
-instance ToJSON Contact
+data Contact = Contact Double Double deriving (Eq, Show)
 
 -- Calculates the collision between the two moving AABBs using the
 -- separating-axis test.
@@ -67,6 +62,7 @@ axisContactTimes (aMin, aMax) (bMin, bMax) v = (tFirst, tLast)
 extents :: AABB -> (Extents, Extents)
 extents (AABB centre extents) = (centre - extents, centre + extents)
 
+-- Returns true if the given AABBs are intersecting, false otherwise.
 intersectAABB :: AABB -> AABB -> Bool
 intersectAABB (AABB (aCentre0, aCentre1) (aRadius0, aRadius1)) (AABB (bCentre0, bCentre1) (bRadius0, bRadius1))
   | abs (aCentre0 - bCentre0) > (aRadius0 + bRadius0) = False

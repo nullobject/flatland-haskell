@@ -47,8 +47,7 @@ empty tiles =
   World { age      = 0
         , players  = []
         , polygons = polygons
-        , tiles    = tiles
-        }
+        , tiles    = tiles }
 
   where polygons = Maybe.mapMaybe (calculatePolygon size) $ zip [0..] tiles
         size = truncate . sqrt . fromIntegral . length $ tiles
@@ -81,6 +80,10 @@ entities world = Maybe.catMaybes $ map Player.entity $ players world
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
 worldWire world = proc messages -> do
-  age' <- countFrom 0 -< 1
+  age' <- countFrom age0 -< 1
   players' <- Player.routeWire $ Player.playerWire . Player.empty -< messages
-  returnA -< world {age = age', players = players'}
+
+  returnA -< world { age     = age'
+                   , players = players' }
+
+  where age0 = age world

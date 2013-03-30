@@ -36,7 +36,6 @@ data Entity = Entity
   , velocity  :: Velocity
   , health    :: Health
   , energy    :: Energy
-  , contacts  :: [Contact]
   } deriving (Generic, Show)
 
 instance ToJSON Entity
@@ -60,9 +59,7 @@ empty identifier = Entity
   , position  = zeroV
   , velocity  = zeroV
   , health    = 100
-  , energy    = 100
-  , contacts  = []
-  }
+  , energy    = 100 }
 
 -- If the entity has enough energy then it returns the updated energy value and
 -- the action. Otherwise it returns the original energy value and defaults to
@@ -112,20 +109,24 @@ stateWire = execute_ $ \action -> return $ case action of
 
 collisionWire :: (Position, Velocity) -> MyWire Velocity (Position, Velocity, [Contact])
 collisionWire (position0, velocity0) =
-  mkPure $ \_ velocity ->
-    let (position', velocity', contacts') = collideWithMap (position0, velocity)
-    in (Right (position', velocity', contacts'), collisionWire (position', velocity'))
+  mkPure $ \_ impulse ->
+    let (position, velocity, contacts) = collideWithMap (position0, impulse)
+    in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
 -- TODO: Collide with map polygons.
 collideWithMap :: (Position, Velocity) -> (Position, Velocity, [Contact])
 collideWithMap (position, velocity) = (position', velocity', contacts')
   where objects = [AABB (2.5, 0) extents, AABB (-2.5, 0) extents]
-        (_, velocity', contacts') = foldl collide (position, velocity, []) objects
+
+        -- Collide with each object.
+        (velocity', contacts') = foldl (collide position) (velocity, []) objects
+
+        -- Integrate the position.
         position' = position ^+^ velocity'
 
 -- Collides with the given object and resolves any collisions.
-collide :: (Position, Velocity, [Contact]) -> AABB -> (Position, Velocity, [Contact])
-collide (position, velocity, contacts) that = (position, velocity', contacts')
+collide :: Position -> (Velocity, [Contact]) -> AABB -> (Velocity, [Contact])
+collide position (velocity, contacts) that = (velocity', contacts')
   where this      = AABB position extents
         contact   = calculateCollisions this that velocity zeroV
         velocity' = applyContact velocity contact
@@ -134,7 +135,8 @@ collide (position, velocity, contacts) that = (position, velocity', contacts')
 -- Corrects the velocity for the given contact so that when the position is
 -- integrated the objects will only just be touching.
 --
--- FIXME: Do we need an epsilon correction, can't the objects really touch?
+-- TODO: Do we need an epsilon correction, can't the objects really touch?
+-- TODO: Can this be moved into the collision module?
 applyContact :: Velocity -> Maybe Contact -> Velocity
 applyContact velocity Nothing = velocity
 applyContact velocity (Just (Contact tFirst _)) = velocity'
@@ -158,9 +160,7 @@ entityWire entity = proc action -> do
                          , position  = position'
                          , velocity  = velocity'
                          , health    = health'
-                         , energy    = energy'
-                         , contacts  = contacts'
-                         }
+                         , energy    = energy' }
 
   where action0       = Action.Idle
         age0          = age entity
