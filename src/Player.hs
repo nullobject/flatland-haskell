@@ -3,10 +3,11 @@
 module Player where
 
 import           Action
+import           Collision (AABB)
 import           Control.Wire
 import qualified Control.Wire as Wire
 import           Core
-import           Entity (Entity)
+import           Entity (Entity, EntityWire)
 import qualified Entity
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
@@ -38,8 +39,10 @@ data Player = Player
 
 instance ToJSON Player
 
+type RouteWire = MyWire ([AABB], [Message]) [Player]
+
 -- A player wire takes an action and produces a new player state.
-type PlayerWire = MyWire Action Player
+type PlayerWire = MyWire ([AABB], Action) Player
 
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
@@ -52,32 +55,37 @@ empty identifier = Player
   }
 
 -- Spawns a new entity.
-spawnEntityWire :: MyWire Action (Maybe Entity)
-spawnEntityWire = mkGen $ \dt action -> do
+spawnEntityWire :: EntityWire
+spawnEntityWire = mkGen $ \dt (objects, action) -> do
   identifier <- Identifier.nextRandom
   let wire = Entity.entityWire $ Entity.empty identifier
-  stepWire wire dt action
+  stepWire wire dt (objects, action)
 
 -- Returns a new player wire given an initial player state.
 --
 -- When a 'spawn' message is received the player enters the Spawning state.
 -- After 3 seconds, an entity is spawned and the player enters the Alive state.
 playerWire :: Player -> PlayerWire
-playerWire player = proc action -> do
-  (state', entity') <- continually $ entityWire -< action
-  returnA -< player {state = state', entity = entity'}
-  where entityWire = pure (Dead, Nothing) . Wire.until (== Spawn) -->
+playerWire player = proc (objects, action) -> do
+  (state', entity') <- continually $ entityWire -< (objects, action)
+
+  returnA -< player { state  = state'
+                    , entity = entity'}
+
+  where entityWire = pure (Dead, Nothing) . Wire.until (\(objects, action) -> action == Spawn) -->
                      pure (Spawning, Nothing) . for 3 -->
                      pure Alive &&& spawnEntityWire
 
 -- Evolves a list of player wires, routing actions which are addressed to them
 -- by matching their identifiers. Actions which are addressed to unknown player
 -- wires are created using the constructor.
-routeWire :: (Identifier -> PlayerWire) -> MyWire [Message] [Player]
+--
+-- TODO: Refactor this function.
+routeWire :: (Identifier -> PlayerWire) -> RouteWire
 routeWire constructor = route Map.empty
   where
-    route :: PlayerWireMap -> MyWire [Message] [Player]
-    route playerWireMap = mkGen $ \dt messages -> do
+    route :: PlayerWireMap -> RouteWire
+    route playerWireMap = mkGen $ \dt (objects, messages) -> do
       -- Create a map from identifiers to actions.
       let actionMap = Map.fromList messages
 
@@ -85,7 +93,7 @@ routeWire constructor = route Map.empty
       let playerWireMap' = foldl spawn playerWireMap $ Map.keys actionMap
 
       -- Step the player wires, supplying the optional actions.
-      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
+      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (objects, Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
 
       -- WTF does this do?
       let resx = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res

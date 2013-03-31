@@ -89,3 +89,9 @@ intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
 -- Returns the edges (line segments) of the polygon.
 calculateSegments :: Polygon -> [Segment]
 calculateSegments (Polygon vertices) = zipWith Segment vertices (rotate vertices)
+
+minV :: Vector -> Vector -> Vector
+minV (a0, a1) (b0, b1) = (min a0 b0, min a1 b1)
+
+maxV :: Vector -> Vector -> Vector
+maxV (a0, a1) (b0, b1) = (max a0 b0, max a1 b1)

@@ -1,5 +1,6 @@
 module Collision
-  ( calculateCollisions
+  ( calculateAABB
+  , calculateCollisions
   , intersectAABB
   , AABB (..)
   , Contact (..)
@@ -14,6 +15,14 @@ data AABB = AABB Vector Extents deriving (Eq, Show)
 
 -- A collision contact.
 data Contact = Contact Double Double deriving (Eq, Show)
+
+calculateAABB :: Polygon -> AABB
+calculateAABB (Polygon points) = AABB centre extents
+  where centre = (pMin + pMax) ^/ 2
+        extents = (pMax - pMin) ^/ 2
+        (pMin, pMax) = foldl update (p, p) $ tail points
+        update (pMin, pMax) a = (minV pMin a, maxV pMax a)
+        p = head points
 
 -- Calculates the collision between the two moving AABBs using the
 -- separating-axis test.

@@ -2,6 +2,7 @@
 
 module World where
 
+import           Collision (calculateAABB)
 import           Control.Wire
 import           Core
 import           Data.Aeson (ToJSON)
@@ -81,9 +82,10 @@ entities world = Maybe.catMaybes $ map Player.entity $ players world
 worldWire :: World -> WorldWire
 worldWire world = proc messages -> do
   age' <- countFrom age0 -< 1
-  players' <- Player.routeWire $ Player.playerWire . Player.empty -< messages
+  players' <- Player.routeWire $ Player.playerWire . Player.empty -< (objects, messages)
 
   returnA -< world { age     = age'
                    , players = players' }
 
-  where age0 = age world
+  where age0    = age world
+        objects = map calculateAABB $ polygons world

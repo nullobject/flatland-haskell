@@ -41,7 +41,7 @@ data Entity = Entity
 instance ToJSON Entity
 
 -- An entity wire takes an action and produces a new entity state.
-type EntityWire = MyWire Action (Maybe Entity)
+type EntityWire = MyWire ([AABB], Action) (Maybe Entity)
 
 extents :: Extents
 extents = (0.5, 0.5)
@@ -107,22 +107,20 @@ stateWire = execute_ $ \action -> return $ case action of
   (Turn _) -> Entity.Turning
   _        -> Entity.Idle
 
-collisionWire :: (Position, Velocity) -> MyWire Velocity (Position, Velocity, [Contact])
+collisionWire :: (Position, Velocity) -> MyWire ([AABB], Velocity) (Position, Velocity, [Contact])
 collisionWire (position0, velocity0) =
-  mkPure $ \_ impulse ->
-    let (position, velocity, contacts) = collideWithMap (position0, impulse)
+  mkPure $ \_ (objects, impulse) ->
+    let (position, velocity, contacts) = collideWithObjects (objects, position0, impulse)
     in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
--- TODO: Collide with map polygons.
-collideWithMap :: (Position, Velocity) -> (Position, Velocity, [Contact])
-collideWithMap (position, velocity) = (position', velocity', contacts')
-  where objects = [AABB (2.5, 0) extents, AABB (-2.5, 0) extents]
+collideWithObjects :: ([AABB], Position, Velocity) -> (Position, Velocity, [Contact])
+collideWithObjects (objects, position, velocity) = (position', velocity', contacts')
+  where
+    -- Collide with each object.
+    (velocity', contacts') = foldl (collide position) (velocity, []) objects
 
-        -- Collide with each object.
-        (velocity', contacts') = foldl (collide position) (velocity, []) objects
-
-        -- Integrate the position.
-        position' = position ^+^ velocity'
+    -- Integrate the position.
+    position' = position ^+^ velocity'
 
 -- Collides with the given object and resolves any collisions.
 collide :: Position -> (Velocity, [Contact]) -> AABB -> (Velocity, [Contact])
@@ -145,13 +143,13 @@ applyContact velocity (Just (Contact tFirst _)) = velocity'
 
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
-entityWire entity = proc action -> do
+entityWire entity = proc (objects, action) -> do
   age'                              <- countFrom age0                       -< 1
   (energy', action')                <- energyActionWire (energy0, action0)  -< action
   state'                            <- stateWire                            -< action'
   direction'                        <- directionWire direction0             -< action'
   impulse'                          <- impulseWire                          -< (direction', action')
-  (position', velocity', contacts') <- collisionWire (position0, velocity0) -< impulse'
+  (position', velocity', contacts') <- collisionWire (position0, velocity0) -< (objects, impulse')
   health'                           <- healthWire health0                   -< age'
 
   returnA -< Just entity { state     = state'
