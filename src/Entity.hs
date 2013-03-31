@@ -43,9 +43,6 @@ instance ToJSON Entity
 -- An entity wire takes an action and produces a new entity state.
 type EntityWire = MyWire ([AABB], Action) (Maybe Entity)
 
-extents :: Extents
-extents = (0.5, 0.5)
-
 speed :: Double
 speed = 1
 
@@ -107,39 +104,13 @@ stateWire = execute_ $ \action -> return $ case action of
   (Turn _) -> Entity.Turning
   _        -> Entity.Idle
 
+-- The collision wire takes a list of AABBs and an impulse velocity and outputs
+-- the position, velocity, and contacts of the entity.
 collisionWire :: (Position, Velocity) -> MyWire ([AABB], Velocity) (Position, Velocity, [Contact])
 collisionWire (position0, velocity0) =
   mkPure $ \_ (objects, impulse) ->
     let (position, velocity, contacts) = collideWithObjects (objects, position0, impulse)
     in (Right (position, velocity, contacts), collisionWire (position, velocity))
-
-collideWithObjects :: ([AABB], Position, Velocity) -> (Position, Velocity, [Contact])
-collideWithObjects (objects, position, velocity) = (position', velocity', contacts')
-  where
-    -- Collide with each object.
-    (velocity', contacts') = foldl (collide position) (velocity, []) objects
-
-    -- Integrate the position.
-    position' = position ^+^ velocity'
-
--- Collides with the given object and resolves any collisions.
-collide :: Position -> (Velocity, [Contact]) -> AABB -> (Velocity, [Contact])
-collide position (velocity, contacts) that = (velocity', contacts')
-  where this      = AABB position extents
-        contact   = calculateCollisions this that velocity zeroV
-        velocity' = applyContact velocity contact
-        contacts' = contacts ++ Maybe.maybeToList contact
-
--- Corrects the velocity for the given contact so that when the position is
--- integrated the objects will only just be touching.
---
--- TODO: Do we need an epsilon correction, can't the objects really touch?
--- TODO: Can this be moved into the collision module?
-applyContact :: Velocity -> Maybe Contact -> Velocity
-applyContact velocity Nothing = velocity
-applyContact velocity (Just (Contact tFirst _)) = velocity'
-  where velocity' = lerp zeroV velocity (tFirst - epsilon)
-        epsilon = 0.00000001
 
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire

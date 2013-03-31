@@ -1,14 +1,16 @@
 module Collision
   ( calculateAABB
   , calculateCollisions
+  , collideWithObjects
   , intersectAABB
   , AABB (..)
   , Contact (..)
   ) where
 
-import Data.Aeson (toJSON, ToJSON)
-import Data.VectorSpace
-import Geometry
+import           Data.Aeson (toJSON, ToJSON)
+import qualified Data.Maybe as Maybe
+import           Data.VectorSpace
+import           Geometry
 
 -- An axis-aligned bounding box.
 data AABB = AABB Vector Extents deriving (Eq, Show)
@@ -77,3 +79,28 @@ intersectAABB (AABB (aCentre0, aCentre1) (aRadius0, aRadius1)) (AABB (bCentre0, 
   | abs (aCentre0 - bCentre0) > (aRadius0 + bRadius0) = False
   | abs (aCentre1 - bCentre1) > (aRadius1 + bRadius1) = False
   | otherwise = True
+
+collideWithObjects :: ([AABB], Position, Velocity) -> (Position, Velocity, [Contact])
+collideWithObjects (objects, position, velocity) = (position', velocity', contacts')
+  where
+    -- Collide with each object.
+    (velocity', contacts') = foldl (collide position) (velocity, []) objects
+
+    -- Integrate the position.
+    position' = position ^+^ velocity'
+
+-- Collides with the given object and resolves any collisions.
+collide :: Position -> (Velocity, [Contact]) -> AABB -> (Velocity, [Contact])
+collide position (velocity, contacts) that = (velocity', contacts')
+  where this      = AABB position (0.5, 0.5)
+        contact   = calculateCollisions this that velocity zeroV
+        velocity' = applyContact velocity contact
+        contacts' = contacts ++ Maybe.maybeToList contact
+
+-- Corrects the velocity for the given contact so that when the position is
+-- integrated the objects will only just be touching.
+applyContact :: Velocity -> Maybe Contact -> Velocity
+applyContact velocity Nothing = velocity
+applyContact velocity (Just (Contact tFirst _)) = velocity'
+  where velocity' = lerp zeroV velocity (tFirst - epsilon)
+        epsilon = 0.00000001
