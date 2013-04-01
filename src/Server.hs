@@ -62,12 +62,19 @@ route :: Wai.Request -> Server Wai.Response
 route request = do
   server <- get
   case Wai.pathInfo request of
-    []         -> return $ Wai.ResponseFile status200 [("Content-Type", "text/html")] "static/index.html" Nothing
-    ["action"] -> actionHandler request
-    ["events"] -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request
-    _          -> error "unexpected pathInfo"
+    []                -> return $ Wai.ResponseFile status200 [("Content-Type", "text/html")]       "static/index.html"   Nothing
+    ["d3.v3.min.js"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/d3.v3.min.js" Nothing
+    ["flatland.js"]   -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/flatland.js"  Nothing
+    ["flatland.css"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "text/css")]        "static/flatland.css" Nothing
+    ["action"]        -> actionHandler request
+    ["events"]        -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request
+    _                 -> error "unexpected pathInfo"
 
 -- Runs the server with the given request channel.
 run :: Chan Wai.EventSource.ServerEvent -> Channel Message WorldView -> IO ()
-run eventChannel messageChannel = Warp.run 8000 app
+run eventChannel messageChannel = Warp.runSettings settings app
   where app request = evalStateT (route request) (ServerState eventChannel messageChannel)
+        settings = Warp.defaultSettings
+          { Warp.settingsPort            = 8000
+          , Warp.settingsFdCacheDuration = 0
+          }

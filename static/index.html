@@ -2,20 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <title>Flatland</title>
+    <link rel="stylesheet" href="flatland.css">
   </head>
+
   <body>
-    <script type="text/javascript">
-      var source = new EventSource("/events");
-      source.onopen = function() {
-        console.log("open");
-      }
-      source.onerror = function(e) {
-        console.log(e);
-      }
-      source.onmessage = function(message) {
-        document.getElementById("content").innerHTML = message.data;
-      }
-    </script>
-    <span id="content"></span>
+    <main>
+      <ul id="grid"></ul>
+    </main>
   </body>
+
+  <script src="d3.v3.min.js"></script>
+  <script src="flatland.js"></script>
 </html>

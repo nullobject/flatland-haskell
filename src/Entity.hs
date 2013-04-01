@@ -40,7 +40,8 @@ data Entity = Entity
 
 instance ToJSON Entity
 
--- An entity wire takes an action and produces a new entity state.
+-- An entity wire takes a list of AABBs and an action and produces a new entity
+-- state.
 type EntityWire = MyWire ([AABB], Action) (Maybe Entity)
 
 speed :: Double

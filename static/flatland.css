@@ -1,0 +1,33 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: black;
+  color: white;
+}
+
+main {
+  position: relative;
+}
+
+#grid li {
+  position: absolute;
+  display: block;
+  list-style: none;
+}
+
+#grid .tile-0 {
+  background: blue;
+}
+
+#grid .tile-1 {
+  background: red;
+}
+
+.entity {
+  position: absolute;
+  background: green;
+}
