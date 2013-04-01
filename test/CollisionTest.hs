@@ -59,7 +59,7 @@ testCalculateCollisions = testGroup "calculateCollisions"
         test10 = calculateCollisions a c (0, 0) (-8, 0) @?= Just (Contact 0.25 0.5)
 
         -- Not in path.
-        test11 = calculateCollisions b d (2, 0) (0, 0) @?= Nothing
+        test11 = calculateCollisions b d (1, 2) (0, 0) @?= Nothing
 
 testIntersectAABB = testGroup "intersectAABB"
   [ testCase "test1" test1

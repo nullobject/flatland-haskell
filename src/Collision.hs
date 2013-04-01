@@ -40,7 +40,7 @@ calculateCollisions a b aVelocity bVelocity
   | bMin1 > aMax1 && v1 >= 0 = Nothing
 
   -- Intersecting.
-  | tFirst <= tLast = Just (Contact tFirst tLast)
+  | tFirst <= 1 && tFirst <= tLast = Just (Contact tFirst tLast)
 
   | otherwise = Nothing
 
@@ -56,7 +56,7 @@ calculateCollisions a b aVelocity bVelocity
         ((aMin0, aMin1), (aMax0, aMax1)) = extents a
         ((bMin0, bMin1), (bMax0, bMax1)) = extents b
 
-        (v0, v1) = bVelocity - aVelocity
+        (v0, v1) = bVelocity ^-^ aVelocity
 
 axisContactTimes :: Extents -> Extents -> Double -> Extents
 axisContactTimes (aMin, aMax) (bMin, bMax) v = (tFirst, tLast)
@@ -71,7 +71,7 @@ axisContactTimes (aMin, aMax) (bMin, bMax) v = (tFirst, tLast)
           | otherwise = 1
 
 extents :: AABB -> (Extents, Extents)
-extents (AABB centre extents) = (centre - extents, centre + extents)
+extents (AABB centre extents) = (centre ^-^ extents, centre ^+^ extents)
 
 -- Returns true if the given AABBs are intersecting, false otherwise.
 intersectAABB :: AABB -> AABB -> Bool
