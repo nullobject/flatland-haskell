@@ -40,7 +40,10 @@
   source.onmessage = function(message) {
     var data = JSON.parse(message.data);
     var size = Math.sqrt(data.tiles.length), scale = 16;
-    var entities = data.players.map(function (player) { return player.entity; });
+    var entities = data
+      .players
+      .map(function (player) { return player.entity; })
+      .filter(function (player) { return player != null });
 
     grid.renderGrid(data.tiles, size, scale);
     grid.renderEntities(entities, size, scale);
