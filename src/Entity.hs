@@ -110,7 +110,7 @@ stateWire = execute_ $ \action -> return $ case action of
 collisionWire :: (Position, Velocity) -> MyWire ([AABB], Velocity) (Position, Velocity, [Contact])
 collisionWire (position0, velocity0) =
   mkPure $ \_ (objects, impulse) ->
-    let (position, velocity, contacts) = collideWithObjects (objects, position0, impulse)
+    let (position, velocity, contacts) = collideWithObjects objects position0 impulse
     in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
 -- Returns a new entity wire given an initial entity state.

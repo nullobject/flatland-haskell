@@ -80,8 +80,8 @@ intersectAABB (AABB (aCentre0, aCentre1) (aRadius0, aRadius1)) (AABB (bCentre0, 
   | abs (aCentre1 - bCentre1) > (aRadius1 + bRadius1) = False
   | otherwise = True
 
-collideWithObjects :: ([AABB], Position, Velocity) -> (Position, Velocity, [Contact])
-collideWithObjects (objects, position, velocity) = (position', velocity', contacts')
+collideWithObjects :: [AABB] -> Position -> Velocity -> (Position, Velocity, [Contact])
+collideWithObjects objects position velocity = (position', velocity', contacts')
   where
     -- Collide with each object.
     (velocity', contacts') = foldl (collide position) (velocity, []) objects
