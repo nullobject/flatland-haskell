@@ -66,6 +66,7 @@ route request = do
     ["d3.v3.min.js"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/d3.v3.min.js" Nothing
     ["flatland.js"]   -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/flatland.js"  Nothing
     ["flatland.css"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "text/css")]        "static/flatland.css" Nothing
+    ["entities.png"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/entities.png" Nothing
     ["tiles.png"]     -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/tiles.png"    Nothing
     ["action"]        -> actionHandler request
     ["events"]        -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request

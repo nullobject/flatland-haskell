@@ -6,8 +6,6 @@
         .data(tiles)
         .style("left", function (d, i) { return (i % size) * scale + "px"; })
         .style("top",  function (d, i) { return Math.floor(i / size) * scale + "px"; })
-        .style("width",  scale + "px")
-        .style("height", scale + "px")
         .attr("class", function (d, i) { return "tile-" + (d & 0xf); })
         .enter()
         .append("li");
@@ -20,8 +18,6 @@
         .attr("class", "entity")
         .style("left",  function (entity) { return (entity.position[0] - 0.5 + (size / 2)) * scale + "px"; })
         .style("top", function (entity) { return (entity.position[1] - 0.5 + (size / 2)) * scale + "px"; })
-        .style("width",  scale + "px")
-        .style("height", scale + "px")
         .enter()
         .append("div");
     }

@@ -15,7 +15,6 @@ main {
 
 #grid li {
   position: absolute;
-  display: block;
   list-style: none;
   width: 16px;
   height: 16px;
@@ -31,5 +30,7 @@ main {
 
 .entity {
   position: absolute;
-  background: green;
+  background: url(entities.png) -32px -184px;
+  width: 18px;
+  height: 26px;
 }
