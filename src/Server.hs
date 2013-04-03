@@ -62,15 +62,16 @@ route :: Wai.Request -> Server Wai.Response
 route request = do
   server <- get
   case Wai.pathInfo request of
-    []                -> return $ Wai.ResponseFile status200 [("Content-Type", "text/html")]       "static/index.html"   Nothing
-    ["d3.v3.min.js"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/d3.v3.min.js" Nothing
-    ["flatland.js"]   -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/flatland.js"  Nothing
-    ["flatland.css"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "text/css")]        "static/flatland.css" Nothing
-    ["entities.png"]  -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/entities.png" Nothing
-    ["tiles.png"]     -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/tiles.png"    Nothing
-    ["action"]        -> actionHandler request
-    ["events"]        -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request
-    _                 -> error "unexpected pathInfo"
+    []                       -> return $ Wai.ResponseFile status200 [("Content-Type", "text/html")]       "static/index.html"           Nothing
+    ["async.min.js"]         -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/async.min.js"         Nothing
+    ["easeljs-0.6.0.min.js"] -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/easeljs-0.6.0.min.js" Nothing
+    ["flatland.js"]          -> return $ Wai.ResponseFile status200 [("Content-Type", "text/javascript")] "static/flatland.js"          Nothing
+    ["flatland.css"]         -> return $ Wai.ResponseFile status200 [("Content-Type", "text/css")]        "static/flatland.css"         Nothing
+    ["entities.png"]         -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/entities.png"         Nothing
+    ["tiles.png"]            -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/tiles.png"            Nothing
+    ["action"]               -> actionHandler request
+    ["events"]               -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request
+    _                        -> error "unexpected pathInfo"
 
 -- Runs the server with the given request channel.
 run :: Chan Wai.EventSource.ServerEvent -> Channel Message WorldView -> IO ()
