@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, TupleSections #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Entity where
 
