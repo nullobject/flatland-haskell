@@ -8,7 +8,7 @@ import           Control.Wire
 import           Core
 import           Data.Aeson (encode, ToJSON)
 import qualified Data.Maybe as Maybe
-import qualified Data.Tiled as Tiled
+import qualified Map
 import qualified Network.Wai.EventSource as Wai.EventSource
 import           Prelude hiding ((.), id)
 import           World (World)
@@ -31,8 +31,8 @@ respond world = mapM_ respond'
 -- TODO: handle the case where the world wire inhibits.
 run :: Channel Message WorldView -> Chan Wai.EventSource.ServerEvent -> IO ()
 run messageChannel eventChannel = do
-  tileMap <- Tiled.loadMapFile "static/test.tmx"
-  let wire = World.worldWire $ World.empty tileMap
+  tiledMap <- Map.loadMapFile "static/test.tmx"
+  let wire = World.worldWire $ World.empty tiledMap
   run' wire clockSession
   where
     run' wire session = do

@@ -35,14 +35,14 @@ type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
 empty :: TiledMap -> World
-empty tileMap =
+empty tiledMap =
   World { age      = 0
         , layers   = layers
         , players  = []
         , polygons = polygons }
 
-  where layers = Map.getTileLayers tileMap
-        polygons = Map.getCollisionPolygons tileMap
+  where layers = Map.getTileLayers tiledMap
+        polygons = Map.getCollisionPolygons tiledMap
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player

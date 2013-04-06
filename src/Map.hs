@@ -5,6 +5,7 @@ module Map
   , getTileLayers
   , Layer
   , Tile
+  , T.loadMapFile
   , T.TiledMap
   ) where
 
@@ -12,7 +13,7 @@ import           Data.Aeson (ToJSON)
 import qualified Data.Key as Key
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
-import qualified Data.Tiled.Types as T
+import qualified Data.Tiled as T
 import           Geometry (Extents, Polygon (..))
 import           GHC.Generics (Generic)
 
