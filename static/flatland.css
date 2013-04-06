@@ -12,5 +12,6 @@ html, body {
 
 canvas {
   border: 1px solid black;
+  image-rendering: -webkit-optimize-contrast;
   position: absolute;
 }

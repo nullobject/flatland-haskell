@@ -115,10 +115,7 @@ function partial(fn) {
       return entities.map(function(entity) {
         var sprite = stage.getChildByName(entity.id) || addEntity(entity, container, spriteSheets.entities);
         sprite.gotoAndPlay(entity.state);
-        sprite.setTransform(
-          entity.position[0] * scale,
-          entity.position[1] * scale
-        );
+        sprite.setTransform(entity.position[0] * scale, entity.position[1] * scale);
         return sprite;
       });
     }

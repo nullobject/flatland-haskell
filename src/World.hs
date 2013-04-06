@@ -6,41 +6,26 @@ import           Collision (calculateAABB)
 import           Control.Wire
 import           Core
 import           Data.Aeson (ToJSON)
-import           Data.Bits
-import qualified Data.Key as Key
 import qualified Data.List as List
-import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
-import           Data.VectorSpace
 import           Entity (Entity)
 import           Geometry (Polygon)
 import           GHC.Generics (Generic)
 import           Identifier
+import           Map (Layer, TiledMap)
+import qualified Map
 import           Player (Player)
 import qualified Player
 import           Prelude hiding ((.), id)
-import qualified Tiled
 
 type Size = Int
-
-data Tile = Tile
-  { position :: (Int, Int)
-  , gid      :: Int } deriving (Generic, Show)
-
-instance ToJSON Tile
-
-data Layer = Layer
-  { name :: String
-  , tiles :: [Tile] } deriving (Generic, Show)
-
-instance ToJSON Layer
 
 -- A world contains a list of players.
 data World = World
   { age      :: Age
+  , layers   :: [Layer]
   , players  :: [Player]
   , polygons :: [Polygon]
-  , layers   :: [Layer]
   } deriving (Generic, Show)
 
 instance ToJSON World
@@ -49,22 +34,15 @@ instance ToJSON World
 type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
-empty :: Tiled.TiledMap -> World
+empty :: TiledMap -> World
 empty tileMap =
   World { age      = 0
+        , layers   = layers
         , players  = []
-        , polygons = polygons
-        , layers   = layers }
+        , polygons = polygons }
 
-  where -- gids = map (fromIntegral . Tiled.tileGid) tiles
-        -- tiles = Map.elems $ Tiled.layerData $ Tiled.getLayer tileMap "background"
-        layers = map toLayer $ Tiled.getTileLayers tileMap
-        polygons = map Tiled.calculatePolygon $ Tiled.layerObjects $ Tiled.getLayer tileMap "collision"
-
-toLayer layer = Layer name tiles
-  where name = Tiled.layerName layer
-        tiles = Key.foldMapWithKey toTile $ Tiled.layerData layer
-        toTile position tile = [Tile position ((fromIntegral . Tiled.tileGid) tile)]
+  where layers = Map.getTileLayers tileMap
+        polygons = Map.getCollisionPolygons tileMap
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player
