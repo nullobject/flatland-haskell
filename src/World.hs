@@ -7,6 +7,7 @@ import           Control.Wire
 import           Core
 import           Data.Aeson (ToJSON)
 import           Data.Bits
+import qualified Data.Key as Key
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -20,23 +21,26 @@ import qualified Player
 import           Prelude hiding ((.), id)
 import qualified Tiled
 
--- A tile represents a cell in the world grid. The bits of the tile value
--- represent properties of the tile:
---
--- bit 7    - Whether a player can spawn in the tile.
--- bit 6    - Whether the tile is opaque to entities.
--- bit 5    - Whether the tile can collide with entities.
--- bits 4-0 - The tile index.
-type Tile = Int
-
 type Size = Int
+
+data Tile = Tile
+  { position :: (Int, Int)
+  , gid      :: Int } deriving (Generic, Show)
+
+instance ToJSON Tile
+
+data Layer = Layer
+  { name :: String
+  , tiles :: [Tile] } deriving (Generic, Show)
+
+instance ToJSON Layer
 
 -- A world contains a list of players.
 data World = World
   { age      :: Age
   , players  :: [Player]
   , polygons :: [Polygon]
-  , tiles    :: [Tile]
+  , layers   :: [Layer]
   } deriving (Generic, Show)
 
 instance ToJSON World
@@ -50,11 +54,17 @@ empty tileMap =
   World { age      = 0
         , players  = []
         , polygons = polygons
-        , tiles    = gids }
+        , layers   = layers }
 
-  where gids = map (fromIntegral . Tiled.tileGid) tiles
-        tiles = Map.elems $ Tiled.layerData $ Tiled.getLayer tileMap "background"
+  where -- gids = map (fromIntegral . Tiled.tileGid) tiles
+        -- tiles = Map.elems $ Tiled.layerData $ Tiled.getLayer tileMap "background"
+        layers = map toLayer $ Tiled.getTileLayers tileMap
         polygons = map Tiled.calculatePolygon $ Tiled.layerObjects $ Tiled.getLayer tileMap "collision"
+
+toLayer layer = Layer name tiles
+  where name = Tiled.layerName layer
+        tiles = Key.foldMapWithKey toTile $ Tiled.layerData layer
+        toTile position tile = [Tile position ((fromIntegral . Tiled.tileGid) tile)]
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player

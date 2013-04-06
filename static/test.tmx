@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="16" height="16" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16">
+  <image source="tiles.png" width="192" height="480"/>
+  <terraintypes>
+   <terrain name="Ice" tile="21"/>
+   <terrain name="Snow" tile="24"/>
+   <terrain name="Green Metal" tile="62"/>
+  </terraintypes>
+  <tile id="17" terrain=",,,0"/>
+  <tile id="18" terrain=",,0,0"/>
+  <tile id="19" terrain=",,0,"/>
+  <tile id="20" terrain=",0,,0"/>
+  <tile id="21" terrain="0,0,0,0"/>
+  <tile id="22" terrain="0,0,,"/>
+  <tile id="23" terrain="0,,,"/>
+  <tile id="24" terrain="1,1,1,1"/>
+  <tile id="34" terrain="0,,0,"/>
+  <tile id="35" terrain=",0,,"/>
+  <tile id="62" terrain="2,2,2,2"/>
+ </tileset>
+ <layer name="background" width="16" height="16">
+  <data encoding="base64" compression="zlib">
+   eJyzZ2BgsKcQS5KJh6L+cCCOoEB/MhCnDGH/D3X9n5Awufr/UqifUvtB+B8D7vxICgYA2T8tPg==
+  </data>
+ </layer>
+ <layer name="objects" width="16" height="16">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo4A4YA/En5DwUNRPCUDW/5uBYcFA2H+XQjPQAQCNxAy0
+  </data>
+ </layer>
+ <objectgroup name="collision" width="16" height="16">
+  <object x="0" y="16" width="16" height="224"/>
+  <object x="0" y="0" width="256" height="16"/>
+  <object x="240" y="16" width="16" height="224"/>
+  <object x="0" y="240" width="256" height="16"/>
+  <object x="192" y="64" width="32" height="32"/>
+  <object x="176" y="128" width="16" height="112"/>
+ </objectgroup>
+</map>

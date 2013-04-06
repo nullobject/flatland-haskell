@@ -11,10 +11,10 @@ import           Entity (Entity, EntityWire)
 import qualified Entity
 import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
+import qualified Data.Key as Key
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Traversable as Traversable
-import qualified Data.Key as Key
 import           GHC.Generics (Generic)
 import           Identifier (Identifier)
 import qualified Identifier

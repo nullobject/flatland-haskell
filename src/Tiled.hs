@@ -1,6 +1,7 @@
 module Tiled
-  ( getLayer
-  , calculatePolygon
+  ( calculatePolygon
+  , getLayer
+  , getTileLayers
   , module T
   ) where
 
@@ -8,12 +9,6 @@ import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import           Data.Tiled as T
 import qualified Geometry (Polygon (..))
-
--- Returns the layer in the tiled map with the given name.
-getLayer :: T.TiledMap -> String -> T.Layer
-getLayer tileMap name = Maybe.fromJust $ List.find predicate layers
-  where predicate layer = T.layerName layer == name
-        layers = T.mapLayers tileMap
 
 -- Calculates a bounding polygon for the given object.
 calculatePolygon :: T.Object -> Geometry.Polygon
@@ -27,3 +22,17 @@ calculatePolygon object = Geometry.Polygon [ (x,         y)
 
         width  = (fromIntegral $ Maybe.fromJust $ T.objectWidth  object) / 16
         height = (fromIntegral $ Maybe.fromJust $ T.objectHeight object) / 16
+
+-- Returns the layer in the tiled map with the given name.
+getLayer :: T.TiledMap -> String -> T.Layer
+getLayer tileMap name = Maybe.fromJust $ List.find predicate layers
+  where predicate layer = T.layerName layer == name
+        layers = T.mapLayers tileMap
+
+getTileLayers :: T.TiledMap -> [T.Layer]
+getTileLayers tileMap = filter isTileLayer layers
+  where layers = T.mapLayers tileMap
+
+isTileLayer :: T.Layer -> Bool
+isTileLayer (Layer _ _ _ _ _) = True
+isTileLayer _                 = False

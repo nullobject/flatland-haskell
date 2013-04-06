@@ -14,14 +14,13 @@ import qualified Entity
 import           Player (Player)
 import qualified Player
 import qualified Visibility
-import           World (World, Tile)
+import           World (World)
 import qualified World
 
 data WorldView = WorldView
   { age      :: Int
   , player   :: Player
   , entities :: [Entity]
-  , tiles    :: [Tile]
   } deriving (Generic, Show)
 
 instance ToJSON WorldView
@@ -32,7 +31,6 @@ forPlayer player world =
   WorldView { age      = age
             , player   = player
             , entities = visibleEntities
-            , tiles    = visibleTiles
             }
 
   where age      = World.age world
@@ -44,9 +42,6 @@ forPlayer player world =
                      Nothing     -> []
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
-
-        -- TODO: Include only visible tiles.
-        visibleTiles = World.tiles world
 
 -- Returns true if the entity is in the visibility manifold.
 entityVisible :: Entity -> [Triangle] -> Bool

@@ -50,15 +50,15 @@ function partial(fn) {
     });
   }
 
-  function addTile(tile, stage, spriteSheet) {
+  function addTile(tile, container, spriteSheet) {
     var sprite = new createjs.BitmapAnimation(spriteSheet);
-    stage.addChild(sprite);
+    container.addChild(sprite);
     return sprite;
   }
 
-  function addEntity(entity, stage, spriteSheet) {
+  function addEntity(entity, container, spriteSheet) {
     var sprite = new createjs.BitmapAnimation(spriteSheet);
-    stage.addChild(sprite);
+    container.addChild(sprite);
     sprite.name = entity.id;
     return sprite;
   }
@@ -78,31 +78,42 @@ function partial(fn) {
 
     var canvas = document.getElementById("main"),
       stage = new createjs.Stage(canvas),
-      tilesRendered = false;
+      playfieldContainer = new createjs.Container(),
+      entitiesContainer = new createjs.Container(),
+      playfieldRendered = false;
 
     centreCanvas(canvas);
+
+    stage.addChild(playfieldContainer);
+    stage.addChild(entitiesContainer);
 
     createjs.Ticker.addEventListener("tick", function() { stage.update(); });
     createjs.Ticker.useRAF = true;
     createjs.Ticker.setFPS(60);
 
-    function updateTiles(tiles, size, scale) {
-      if (tilesRendered) return;
-      tilesRendered = true;
+    function updatePlayfield(layers, scale, container) {
+      if (playfieldRendered) return;
+      playfieldRendered = true;
+      return layers.map(function(layer, index) {
+        var subContainer = new createjs.Container();
+        container.addChild(subContainer);
+        updateTiles(layer.tiles, scale, subContainer);
+        return subContainer;
+      });
+    }
+
+    function updateTiles(tiles, scale, container) {
       return tiles.map(function(tile, index) {
-        var sprite = addTile(tile, stage, spriteSheets.tiles);
-        sprite.gotoAndStop(tile - 1);
-        sprite.setTransform(
-          Math.floor(index / size) * scale,
-          (index % size) * scale
-        );
+        var sprite = addTile(tile, container, spriteSheets.tiles);
+        sprite.gotoAndStop(tile.gid - 1);
+        sprite.setTransform(tile.position[0] * scale, tile.position[1] * scale);
         return sprite;
       });
     }
 
-    function updateEntities(entities, size, scale) {
+    function updateEntities(entities, scale, container) {
       return entities.map(function(entity) {
-        var sprite = stage.getChildByName(entity.id) || addEntity(entity, stage, spriteSheets.entities);
+        var sprite = stage.getChildByName(entity.id) || addEntity(entity, container, spriteSheets.entities);
         sprite.gotoAndPlay(entity.state);
         sprite.setTransform(
           entity.position[0] * scale,
@@ -119,15 +130,14 @@ function partial(fn) {
 
     source.onmessage = function(message) {
       var data = JSON.parse(message.data),
-        size = Math.sqrt(data.tiles.length),
         scale = 16,
         entities = data
           .players
           .map(function(player) { return player.entity; })
           .filter(function(player) { return player != null });
 
-      updateTiles(data.tiles, size, scale);
-      updateEntities(entities, size, scale);
+      updatePlayfield(data.layers, scale, playfieldContainer);
+      updateEntities(entities, scale, entitiesContainer);
     }
   });
 }());
