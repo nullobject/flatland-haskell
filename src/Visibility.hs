@@ -23,13 +23,13 @@ instance Ord Endpoint where
 
 -- Returns a list of triangles representing the area visible from the origin.
 --
--- The algorithm casts rays from the origin to the vertices in each polygon,
+-- The algorithm casts rays from the origin to the vertices in each rectangle,
 -- calculating the triangles subtended by the rays intersecting with the
 -- nearest edge.
-calculateVisibility :: Point -> [Polygon] -> [Triangle]
-calculateVisibility origin polygons = calculateTriangles origin endpoints
+calculateVisibility :: Point -> [Rectangle] -> [Triangle]
+calculateVisibility origin rectangles = calculateTriangles origin endpoints
   where endpoints = concatMap (calculateEndpoints origin) segments
-        segments = concatMap calculateSegments polygons
+        segments = concatMap calculateRectangleSegments rectangles
 
 -- Calculates the endpoints for the segment.
 calculateEndpoints :: Point -> Segment -> [Endpoint]

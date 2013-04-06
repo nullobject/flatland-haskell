@@ -80,16 +80,37 @@ function partial(fn) {
       stage = new createjs.Stage(canvas),
       playfieldContainer = new createjs.Container(),
       entitiesContainer = new createjs.Container(),
-      playfieldRendered = false;
+      debugContainer = new createjs.Container(),
+      playfieldRendered = false,
+      debugRendered = false;
 
     centreCanvas(canvas);
 
+    debugContainer.alpha = 0.5;
+
     stage.addChild(playfieldContainer);
     stage.addChild(entitiesContainer);
+    stage.addChild(debugContainer);
 
     createjs.Ticker.addEventListener("tick", function() { stage.update(); });
     createjs.Ticker.useRAF = true;
     createjs.Ticker.setFPS(60);
+
+    function updateDebug(rectangles, scale, container) {
+      if (debugRendered) return;
+      debugRendered = true;
+      return rectangles.map(function(rectangle) {
+        var shape = new createjs.Shape()
+        shape.graphics.beginFill("#ff0000").drawRect(
+          rectangle.rectanglePosition[0] * scale,
+          rectangle.rectanglePosition[1] * scale,
+          rectangle.rectangleExtents[0] * scale,
+          rectangle.rectangleExtents[1] * scale
+        );
+        container.addChild(shape);
+        return shape;
+      });
+    }
 
     function updatePlayfield(layers, scale, container) {
       if (playfieldRendered) return;
@@ -113,7 +134,7 @@ function partial(fn) {
 
     function updateEntities(entities, scale, container) {
       return entities.map(function(entity) {
-        var sprite = stage.getChildByName(entity.id) || addEntity(entity, container, spriteSheets.entities);
+        var sprite = container.getChildByName(entity.id) || addEntity(entity, container, spriteSheets.entities);
         sprite.gotoAndPlay(entity.state);
         sprite.setTransform(entity.position[0] * scale, entity.position[1] * scale);
         return sprite;
@@ -133,6 +154,7 @@ function partial(fn) {
           .map(function(player) { return player.entity; })
           .filter(function(player) { return player != null });
 
+      updateDebug(data.collisionRectangles, scale, debugContainer);
       updatePlayfield(data.layers, scale, playfieldContainer);
       updateEntities(entities, scale, entitiesContainer);
     }

@@ -2,14 +2,14 @@
 
 module World where
 
-import           Collision (calculateAABB)
+import           Collision (calculateAABBForRectangle)
 import           Control.Wire
 import           Core
 import           Data.Aeson (ToJSON)
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import           Entity (Entity)
-import           Geometry (Polygon)
+import           Geometry (Rectangle)
 import           GHC.Generics (Generic)
 import           Identifier
 import           Map (Layer, TiledMap)
@@ -22,10 +22,10 @@ type Size = Int
 
 -- A world contains a list of players.
 data World = World
-  { age      :: Age
-  , layers   :: [Layer]
-  , players  :: [Player]
-  , polygons :: [Polygon]
+  { age                 :: Age
+  , layers              :: [Layer]
+  , players             :: [Player]
+  , collisionRectangles :: [Rectangle]
   } deriving (Generic, Show)
 
 instance ToJSON World
@@ -36,13 +36,13 @@ type WorldWire = MyWire [Message] World
 -- Returns a new world.
 empty :: TiledMap -> World
 empty tiledMap =
-  World { age      = 0
-        , layers   = layers
-        , players  = []
-        , polygons = polygons }
+  World { age                 = 0
+        , layers              = layers
+        , players             = []
+        , collisionRectangles = collisionRectangles }
 
   where layers = Map.getTileLayers tiledMap
-        polygons = Map.getCollisionPolygons tiledMap
+        collisionRectangles = Map.getCollisionRectangles tiledMap
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player
@@ -62,5 +62,6 @@ worldWire world = proc messages -> do
   returnA -< world { age     = age'
                    , players = players' }
 
-  where age0    = age world
-        objects = map calculateAABB $ polygons world
+  where age0       = age world
+        objects    = map calculateAABBForRectangle rectangles
+        rectangles = collisionRectangles world

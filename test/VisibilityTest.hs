@@ -31,28 +31,28 @@ testSweep = testGroup "calculateVisibility"
   , testCase "test3" test3
   , testCase "test4" test4 ]
 
-  where polygons = [ Polygon [(-1,  1), ( 1,  1), ( 1, -1), (-1, -1)]
-                   , Polygon [(-5,  5), ( 5,  5), ( 5, -5), (-5, -5)] ]
+  where rectangles = [ Rectangle (-1, -1) ( 2,  2)
+                     , Rectangle (-5, -5) (10, 10) ]
 
-        test1 = calculateVisibility (0, 0) polygons @?=
+        test1 = calculateVisibility (0, 0) rectangles @?=
           [ Triangle (0, 0) ( 1,  1) (-1,  1)
           , Triangle (0, 0) ( 1, -1) ( 1,  1)
           , Triangle (0, 0) (-1, -1) ( 1, -1)
           , Triangle (0, 0) (-1,  1) (-1, -1) ]
 
-        test2 = calculateVisibility (0, 1) polygons @?=
-          [ Triangle (0, 1) ( 1,  1) (-1,  1)
+        test2 = calculateVisibility (0, 1) rectangles @?=
+          [ Triangle (0, 1) (-1,  1) ( 1,  1)
           , Triangle (0, 1) ( 1, -1) ( 1,  1)
           , Triangle (0, 1) (-1, -1) ( 1, -1)
           , Triangle (0, 1) (-1,  1) (-1, -1) ]
 
-        test3 = calculateVisibility (0, 2) polygons @?=
+        test3 = calculateVisibility (0, 2) rectangles @?=
           [ Triangle (0, 2) ( 5,  5) (-5,  5)
           , Triangle (0, 2) ( 5, -3) ( 5,  5)
           , Triangle (0, 2) (-1,  1) ( 1,  1)
           , Triangle (0, 2) (-5,  5) (-5, -3) ]
 
-        test4 = calculateVisibility (0, 4) polygons @?=
+        test4 = calculateVisibility (0, 4) rectangles @?=
           [ Triangle (0, 4) ( 5,  5) (-5,  5)
           , Triangle (0, 4) ( 5, -5) ( 5,  5)
           , Triangle (0, 4) ( 3, -5) ( 5, -5)

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Map
-  ( getCollisionPolygons
+  ( getCollisionRectangles
   , getTileLayers
   , Layer
   , Tile
@@ -14,7 +14,7 @@ import qualified Data.Key as Key
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Tiled as T
-import           Geometry (Extents, Polygon (..))
+import           Geometry (Extents, Rectangle (..))
 import           GHC.Generics (Generic)
 
 data Tile = Tile
@@ -29,9 +29,9 @@ data Layer = Layer
 
 instance ToJSON Layer
 
--- Returns the collision polygons for the given tiled map.
-getCollisionPolygons :: T.TiledMap -> [Polygon]
-getCollisionPolygons tiledMap = map (calculatePolygon extents) $ T.layerObjects $ getLayer "collision" tiledMap
+-- Returns the collision rectangles for the given tiled map.
+getCollisionRectangles :: T.TiledMap -> [Rectangle]
+getCollisionRectangles tiledMap = map (calculateRectangle extents) $ T.layerObjects $ getLayer "collision" tiledMap
   where extents = getTileExtents tiledMap
 
 getTileExtents :: T.TiledMap -> Extents
@@ -39,14 +39,9 @@ getTileExtents tiledMap = (width, height)
   where width  = fromIntegral $ T.mapTileWidth  tiledMap
         height = fromIntegral $ T.mapTileHeight tiledMap
 
--- Calculates a bounding polygon for the given tiled object.
-calculatePolygon :: Extents -> T.Object -> Polygon
-calculatePolygon (tileWidth, tileHeight) object =
-  Polygon [ (x,         y)
-          , (x + width, y)
-          , (x,         y + height)
-          , (x + width, y + height) ]
-
+-- Calculates a bounding rectangle for the given tiled object.
+calculateRectangle :: Extents -> T.Object -> Rectangle
+calculateRectangle (tileWidth, tileHeight) object = Rectangle (x, y) (width, height)
   where x = (fromIntegral $ T.objectX object) / tileWidth
         y = (fromIntegral $ T.objectY object) / tileHeight
 

@@ -1,5 +1,6 @@
 module Collision
-  ( calculateAABB
+  ( calculateAABBForPolygon
+  , calculateAABBForRectangle
   , calculateCollisions
   , collideWithObjects
   , intersectAABB
@@ -10,7 +11,8 @@ module Collision
 import           Data.Aeson (toJSON, ToJSON)
 import qualified Data.Maybe as Maybe
 import           Data.VectorSpace
-import           Geometry
+import           Geometry (Extents, Position, Rectangle (..), Polygon (..), Vector, Velocity)
+import qualified Geometry
 
 -- An axis-aligned bounding box.
 data AABB = AABB Vector Extents deriving (Eq, Show)
@@ -18,13 +20,18 @@ data AABB = AABB Vector Extents deriving (Eq, Show)
 -- A collision contact.
 data Contact = Contact Double Double deriving (Eq, Show)
 
-calculateAABB :: Polygon -> AABB
-calculateAABB (Polygon points) = AABB centre extents
+calculateAABBForPolygon :: Polygon -> AABB
+calculateAABBForPolygon (Polygon points) = AABB centre extents
   where centre = (pMin + pMax) ^/ 2
         extents = (pMax - pMin) ^/ 2
         (pMin, pMax) = foldl update (p, p) $ tail points
-        update (pMin, pMax) a = (minV pMin a, maxV pMax a)
+        update (pMin, pMax) a = (Geometry.minV pMin a, Geometry.maxV pMax a)
         p = head points
+
+calculateAABBForRectangle :: Rectangle -> AABB
+calculateAABBForRectangle (Rectangle position extents) = AABB centre halfExtents
+  where centre = position ^+^ halfExtents
+        halfExtents = extents ^/ 2
 
 -- Calculates the collision between the two moving AABBs using the
 -- separating-axis test.
@@ -53,8 +60,8 @@ calculateCollisions a b aVelocity bVelocity
         -- Y-axis first/last contact times.
         (tFirst1, tLast1) = axisContactTimes (aMin1, aMax1) (bMin1, bMax1) v1
 
-        ((aMin0, aMin1), (aMax0, aMax1)) = extents a
-        ((bMin0, bMin1), (bMax0, bMax1)) = extents b
+        ((aMin0, aMin1), (aMax0, aMax1)) = calculateAABBExtents a
+        ((bMin0, bMin1), (bMax0, bMax1)) = calculateAABBExtents b
 
         (v0, v1) = bVelocity ^-^ aVelocity
 
@@ -70,8 +77,8 @@ axisContactTimes (aMin, aMax) (bMin, bMax) v = (tFirst, tLast)
           | aMax > bMin && v > 0 = (aMax - bMin) / v
           | otherwise = 1
 
-extents :: AABB -> (Extents, Extents)
-extents (AABB centre extents) = (centre ^-^ extents, centre ^+^ extents)
+calculateAABBExtents :: AABB -> (Extents, Extents)
+calculateAABBExtents (AABB centre extents) = (centre ^-^ extents, centre ^+^ extents)
 
 -- Returns true if the given AABBs are intersecting, false otherwise.
 intersectAABB :: AABB -> AABB -> Bool

@@ -21,6 +21,13 @@ data Segment = Segment Point Point deriving (Eq, Show)
 -- A triangle is a 3-sided shape.
 data Triangle = Triangle Point Point Point deriving (Eq, Show)
 
+-- A rectangle is a 4-sided shape.
+data Rectangle = Rectangle
+  { rectanglePosition :: Point
+  , rectangleExtents  :: Extents } deriving (Eq, Generic, Show)
+
+instance ToJSON Rectangle
+
 -- A polygon is an n-sided shape where the consecutive verticies are connected
 -- by a line segment.
 data Polygon = Polygon [Point] deriving (Eq, Generic, Show)
@@ -86,9 +93,17 @@ intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
         u = (dot11 * dot02 - dot01 * dot12) * invDenom
         v = (dot00 * dot12 - dot01 * dot02) * invDenom
 
--- Returns the edges (line segments) of the polygon.
-calculateSegments :: Polygon -> [Segment]
-calculateSegments (Polygon vertices) = zipWith Segment vertices (rotate vertices)
+-- Returns the edges of the polygon.
+calculatePolygonSegments :: Polygon -> [Segment]
+calculatePolygonSegments (Polygon vertices) = zipWith Segment vertices (rotate vertices)
+
+-- Returns the edges of the rectangle.
+calculateRectangleSegments :: Rectangle -> [Segment]
+calculateRectangleSegments (Rectangle (x, y) (width, height)) =
+  [ Segment (x,         y)          (x + width, y)
+  , Segment (x + width, y)          (x + width, y + height)
+  , Segment (x + width, y + height) (x,         y + height)
+  , Segment (x,         y + height) (x,         y) ]
 
 minV :: Vector -> Vector -> Vector
 minV (a0, a1) (b0, b1) = (min a0 b0, min a1 b1)

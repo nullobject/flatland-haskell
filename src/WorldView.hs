@@ -35,10 +35,10 @@ forPlayer player world =
 
   where age      = World.age world
         entities = World.entities world
-        polygons = World.polygons world
+        collisionRectangles = World.collisionRectangles world
 
         visibility = case Player.entity player of
-                     Just entity -> Visibility.calculateVisibility (Entity.position entity) polygons
+                     Just entity -> Visibility.calculateVisibility (Entity.position entity) collisionRectangles
                      Nothing     -> []
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
