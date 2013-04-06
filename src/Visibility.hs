@@ -29,7 +29,7 @@ instance Ord Endpoint where
 calculateVisibility :: Point -> [Rectangle] -> [Triangle]
 calculateVisibility origin rectangles = calculateTriangles origin endpoints
   where endpoints = concatMap (calculateEndpoints origin) segments
-        segments = concatMap calculateRectangleSegments rectangles
+        segments = concatMap rectangleSegments rectangles
 
 -- Calculates the endpoints for the segment.
 calculateEndpoints :: Point -> Segment -> [Endpoint]

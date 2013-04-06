@@ -88,8 +88,8 @@ intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
         v = (dot00 * dot12 - dot01 * dot02) * invDenom
 
 -- Returns the edges of the rectangle.
-calculateRectangleSegments :: Rectangle -> [Segment]
-calculateRectangleSegments (Rectangle (x, y) (width, height)) =
+rectangleSegments :: Rectangle -> [Segment]
+rectangleSegments (Rectangle (x, y) (width, height)) =
   [ Segment (x,         y)          (x + width, y)
   , Segment (x + width, y)          (x + width, y + height)
   , Segment (x + width, y + height) (x,         y + height)
