@@ -8,15 +8,17 @@ import           Core
 import           Data.Aeson (ToJSON)
 import           Data.Bits
 import qualified Data.List as List
+import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import           Data.VectorSpace
 import           Entity (Entity)
-import           Geometry (Polygon (..))
+import           Geometry (Polygon)
 import           GHC.Generics (Generic)
 import           Identifier
 import           Player (Player)
 import qualified Player
 import           Prelude hiding ((.), id)
+import qualified Tiled
 
 -- A tile represents a cell in the world grid. The bits of the tile value
 -- represent properties of the tile:
@@ -43,31 +45,16 @@ instance ToJSON World
 type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
-empty :: [Tile] -> World
-empty tiles =
+empty :: Tiled.TiledMap -> World
+empty tileMap =
   World { age      = 0
         , players  = []
         , polygons = polygons
-        , tiles    = tiles }
+        , tiles    = gids }
 
-  where polygons = Maybe.mapMaybe (calculatePolygon size) $ zip [0..] tiles
-        size = truncate . sqrt . fromIntegral . length $ tiles
-
--- Calculates the polygon for the given world size and index/tile tuple.
-calculatePolygon :: Size -> (Int, Tile) -> Maybe Polygon
-calculatePolygon size (index, tile)
-  | opaque tile = Just (Polygon [ (x index,     y index    )
-                                , (x index + 1, y index    )
-                                , (x index + 1, y index + 1)
-                                , (x index,     y index + 1) ] )
-  | otherwise = Nothing
-
-  where opaque tile = tile .&. (bit 6) /= 0
-
-        x n = fromIntegral $ (n `mod` size) - halfSize
-        y n = fromIntegral $ (n `div` size) - halfSize
-
-        halfSize = size `div` 2
+  where gids = map (fromIntegral . Tiled.tileGid) tiles
+        tiles = Map.elems $ Tiled.layerData $ Tiled.getLayer tileMap "background"
+        polygons = map Tiled.calculatePolygon $ Tiled.layerObjects $ Tiled.getLayer tileMap "collision"
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player

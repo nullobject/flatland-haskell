@@ -31,6 +31,7 @@ executable flatland
     , conduit
     , containers
     , ghc-prim
+    , htiled
     , http-types
     , keys
     , mtl

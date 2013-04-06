@@ -22,10 +22,10 @@ function partial(fn) {
       var spriteSheet = new createjs.SpriteSheet({
         images: [image],
         frames: [
-          [30, 184, 22, 26, 0],
-          [52, 184, 22, 26, 0],
-          [74, 184, 22, 26, 0],
-          [96, 184, 22, 26, 0]
+          [30, 184, 22, 26, 0, 11, 13],
+          [52, 184, 22, 26, 0, 11, 13],
+          [74, 184, 22, 26, 0, 11, 13],
+          [96, 184, 22, 26, 0, 11, 13]
         ],
         animations: {
           idle: {frames: [0]},
@@ -91,10 +91,10 @@ function partial(fn) {
       tilesRendered = true;
       return tiles.map(function(tile, index) {
         var sprite = addTile(tile, stage, spriteSheets.tiles);
-        sprite.gotoAndStop((tile & 0xf) + 61);
+        sprite.gotoAndStop(tile - 1);
         sprite.setTransform(
-          (index % size) * scale,
-          Math.floor(index / size) * scale
+          Math.floor(index / size) * scale,
+          (index % size) * scale
         );
         return sprite;
       });
@@ -105,8 +105,8 @@ function partial(fn) {
         var sprite = stage.getChildByName(entity.id) || addEntity(entity, stage, spriteSheets.entities);
         sprite.gotoAndPlay(entity.state);
         sprite.setTransform(
-          (entity.position[0] + (size / 2) - 0.5) * scale,
-          (entity.position[1] + (size / 2) - 0.5) * scale
+          entity.position[0] * scale,
+          entity.position[1] * scale
         );
         return sprite;
       });
