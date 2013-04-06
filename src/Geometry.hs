@@ -28,12 +28,6 @@ data Rectangle = Rectangle
 
 instance ToJSON Rectangle
 
--- A polygon is an n-sided shape where the consecutive verticies are connected
--- by a line segment.
-data Polygon = Polygon [Point] deriving (Eq, Generic, Show)
-
-instance ToJSON Polygon
-
 -- Calculates the angle between two points.
 angleBetween :: Point -> Point -> Angle
 angleBetween (p1, p2) (q1, q2) = atan2 (q2 - p2) (q1 - p1)
@@ -93,10 +87,6 @@ intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
         u = (dot11 * dot02 - dot01 * dot12) * invDenom
         v = (dot00 * dot12 - dot01 * dot02) * invDenom
 
--- Returns the edges of the polygon.
-calculatePolygonSegments :: Polygon -> [Segment]
-calculatePolygonSegments (Polygon vertices) = zipWith Segment vertices (rotate vertices)
-
 -- Returns the edges of the rectangle.
 calculateRectangleSegments :: Rectangle -> [Segment]
 calculateRectangleSegments (Rectangle (x, y) (width, height)) =
@@ -104,9 +94,3 @@ calculateRectangleSegments (Rectangle (x, y) (width, height)) =
   , Segment (x + width, y)          (x + width, y + height)
   , Segment (x + width, y + height) (x,         y + height)
   , Segment (x,         y + height) (x,         y) ]
-
-minV :: Vector -> Vector -> Vector
-minV (a0, a1) (b0, b1) = (min a0 b0, min a1 b1)
-
-maxV :: Vector -> Vector -> Vector
-maxV (a0, a1) (b0, b1) = (max a0 b0, max a1 b1)
