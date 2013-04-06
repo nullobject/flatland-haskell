@@ -1,8 +1,8 @@
 module Collision
-  ( calculateAABBForRectangle
-  , calculateCollisions
+  ( calculateCollisions
   , collideWithObjects
   , intersectAABB
+  , getRectangleAABB
   , AABB (..)
   , Contact (..)
   ) where
@@ -10,17 +10,18 @@ module Collision
 import           Data.Aeson (toJSON, ToJSON)
 import qualified Data.Maybe as Maybe
 import           Data.VectorSpace
-import           Geometry (Extents, Position, Rectangle (..), Vector, Velocity)
+import           Geometry (Extents, Point, Position, Rectangle (..), Velocity)
 import qualified Geometry
 
 -- An axis-aligned bounding box.
-data AABB = AABB Vector Extents deriving (Eq, Show)
+data AABB = AABB Point Extents deriving (Eq, Show)
 
 -- A collision contact.
 data Contact = Contact Double Double deriving (Eq, Show)
 
-calculateAABBForRectangle :: Rectangle -> AABB
-calculateAABBForRectangle (Rectangle position extents) = AABB centre halfExtents
+-- Converts the given rectangle to an AABB.
+getRectangleAABB :: Rectangle -> AABB
+getRectangleAABB (Rectangle position extents) = AABB centre halfExtents
   where centre = position ^+^ halfExtents
         halfExtents = extents ^/ 2
 

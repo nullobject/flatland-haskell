@@ -2,7 +2,7 @@
 
 module World where
 
-import           Collision (calculateAABBForRectangle)
+import           Collision (getRectangleAABB)
 import           Control.Wire
 import           Core
 import           Data.Aeson (ToJSON)
@@ -63,5 +63,5 @@ worldWire world = proc messages -> do
                    , players = players' }
 
   where age0       = age world
-        objects    = map calculateAABBForRectangle rectangles
+        objects    = map getRectangleAABB rectangles
         rectangles = collisionRectangles world
