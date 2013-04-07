@@ -19,7 +19,10 @@ import           GHC.Generics (Generic)
 
 data Tile = Tile
   { position :: (Int, Int)
-  , gid      :: Int } deriving (Generic, Show)
+  , gid      :: Int
+  , hFlipped :: Bool
+  , vFlipped :: Bool
+  , dFlipped :: Bool } deriving (Generic, Show)
 
 instance ToJSON Tile
 
@@ -50,19 +53,24 @@ calculateRectangle (tileWidth, tileHeight) object = Rectangle (x, y) (width, hei
 
 -- Returns the tile layers for the given tiled map.
 getTileLayers :: T.TiledMap -> [Layer]
-getTileLayers tiledMap = map Map.toLayer $ filter isTileLayer layers
+getTileLayers tiledMap = map toLayer $ filter isTileLayer layers
   where layers = T.mapLayers tiledMap
+
+toLayer layer = Layer name tiles
+  where name = T.layerName layer
+        tiles = Key.foldMapWithKey (\position tile -> [toTile position tile]) $ T.layerData layer
+
+toTile position tile = Tile position gid hFlipped vFlipped dFlipped
+  where gid = fromIntegral . T.tileGid $ tile
+        hFlipped = T.tileIsHFlipped tile
+        vFlipped = T.tileIsVFlipped tile
+        dFlipped = T.tileIsDiagFlipped tile
 
 getLayer :: String -> T.TiledMap -> T.Layer
 getLayer name tiledMap = Maybe.fromJust $ List.find predicate layers
   where predicate layer = T.layerName layer == name
         layers = T.mapLayers tiledMap
 
-toLayer layer = Layer name tiles
-  where name = T.layerName layer
-        tiles = Key.foldMapWithKey toTile $ T.layerData layer
-        toTile position tile = [Tile position ((fromIntegral . T.tileGid) tile)]
-
 isTileLayer :: T.Layer -> Bool
 isTileLayer (T.Layer _ _ _ _ _) = True
-isTileLayer _                 = False
+isTileLayer _                   = False

@@ -90,7 +90,7 @@ function partial(fn) {
 
     stage.addChild(playfieldContainer);
     stage.addChild(entitiesContainer);
-    stage.addChild(debugContainer);
+    // stage.addChild(debugContainer);
 
     createjs.Ticker.addEventListener("tick", function() { stage.update(); });
     createjs.Ticker.useRAF = true;
@@ -125,9 +125,30 @@ function partial(fn) {
 
     function updateTiles(tiles, scale, container) {
       return tiles.map(function(tile, index) {
-        var sprite = addTile(tile, container, spriteSheets.tiles);
+        var sprite = addTile(tile, container, spriteSheets.tiles),
+          x = tile.position[0] * scale,
+          y = tile.position[1] * scale;
+
+        if (tile.dFlipped && tile.hFlipped && tile.vFlipped) {
+          sprite.set({x: x, y: y, scaleY: -1, rotation: -90, regX: 16, regY: 16});
+        } else if (tile.dFlipped && tile.hFlipped) {
+          sprite.set({x: x, y: y, rotation: 90, regY: 16});
+        } else if (tile.dFlipped && tile.vFlipped) {
+          sprite.set({x: x, y: y, rotation: -90, regX: 16});
+        } else if (tile.hFlipped && tile.vFlipped) {
+          sprite.set({x: x, y: y, scaleX: -1, scaleY: -1, regX: 16, regY: 16});
+        } else if (tile.dFlipped) {
+          sprite.set({x: x, y: y, scaleX: -1, rotation: -90});
+        } else if (tile.hFlipped) {
+          sprite.set({x: x, y: y, scaleX: -1, regX: 16});
+        } else if (tile.vFlipped) {
+          sprite.set({x: x, y: y, scaleY: -1, regY: 16});
+        } else {
+          sprite.set({x: x, y: y});
+        }
+
         sprite.gotoAndStop(tile.gid - 1);
-        sprite.setTransform(tile.position[0] * scale, tile.position[1] * scale);
+
         return sprite;
       });
     }

@@ -79,6 +79,8 @@ intersectAABB (AABB (aCentre0, aCentre1) (aRadius0, aRadius1)) (AABB (bCentre0, 
   | abs (aCentre1 - bCentre1) > (aRadius1 + bRadius1) = False
   | otherwise = True
 
+-- Collides the object with the given position and velocity with a list of
+-- objects and returns the updated position, velocity and a list of contacts.
 collideWithObjects :: [AABB] -> Position -> Velocity -> (Position, Velocity, [Contact])
 collideWithObjects objects position velocity = (position', velocity', contacts')
   where
