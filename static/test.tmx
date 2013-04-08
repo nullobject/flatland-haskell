@@ -45,5 +45,6 @@
    <property name="spawn" value="true"/>
   </properties>
   <object x="48" y="192" width="16" height="16"/>
+  <object x="144" y="48" width="16" height="16"/>
  </objectgroup>
 </map>

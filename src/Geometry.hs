@@ -94,3 +94,7 @@ rectangleSegments (Rectangle (x, y) (width, height)) =
   , Segment (x + width, y)          (x + width, y + height)
   , Segment (x + width, y + height) (x,         y + height)
   , Segment (x,         y + height) (x,         y) ]
+
+-- Returns the centre of the rectangle.
+rectangleCentre :: Rectangle -> Point
+rectangleCentre rectangle = rectanglePosition rectangle ^+^ (rectangleExtents rectangle ^/ 2)

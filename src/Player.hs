@@ -15,6 +15,7 @@ import qualified Data.Key as Key
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Traversable as Traversable
+import           Geometry (Rectangle)
 import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
@@ -57,8 +58,8 @@ empty identifier = Player
 --
 -- When a 'spawn' message is received the player enters the Spawning state.
 -- After 3 seconds, an entity is spawned and the player enters the Alive state.
-playerWire :: Player -> PlayerWire
-playerWire player = proc (objects, action) -> do
+playerWire :: [Rectangle] -> Player -> PlayerWire
+playerWire spawnRectangles player = proc (objects, action) -> do
   (state', entity') <- continually $ entityWire -< (objects, action)
 
   returnA -< player { state  = state'
@@ -66,7 +67,7 @@ playerWire player = proc (objects, action) -> do
 
   where entityWire = pure (Dead, Nothing) . Wire.until (\(objects, action) -> action == Spawn) -->
                      pure (Spawning, Nothing) . for 3 -->
-                     pure Alive &&& Entity.spawnWire
+                     pure Alive &&& Entity.spawnWire spawnRectangles
 
 -- Evolves a list of player wires, routing actions which are addressed to them
 -- by matching their identifiers. Actions which are addressed to unknown player

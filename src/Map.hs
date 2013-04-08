@@ -2,6 +2,7 @@
 
 module Map
   ( getCollisionRectangles
+  , getSpawnRectangles
   , getTileLayers
   , Layer
   , Tile
@@ -37,6 +38,10 @@ instance ToJSON Layer
 -- Returns the collision rectangles for the given tiled map.
 getCollisionRectangles :: T.TiledMap -> [Rectangle]
 getCollisionRectangles tiledMap = map (calculateRectangle extents) $ T.layerObjects $ getLayer "collision" tiledMap
+  where extents = getTileExtents tiledMap
+
+getSpawnRectangles :: T.TiledMap -> [Rectangle]
+getSpawnRectangles tiledMap = map (calculateRectangle extents) $ T.layerObjects $ getLayer "spawn" tiledMap
   where extents = getTileExtents tiledMap
 
 getTileExtents :: T.TiledMap -> Extents

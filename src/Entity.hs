@@ -48,13 +48,13 @@ speed :: Double
 speed = 1
 
 -- Returns a new entity.
-empty :: Identifier -> Entity
-empty identifier = Entity
+empty :: Identifier -> Position -> Entity
+empty identifier position = Entity
   { Entity.id = identifier
   , state     = Entity.Idle
   , age       = 0
   , direction = 0
-  , position  = (8, 8)
+  , position  = position
   , velocity  = zeroV
   , health    = 100
   , energy    = 100 }
@@ -114,10 +114,12 @@ collisionWire (position0, velocity0) =
     in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
 -- Spawns a new entity.
-spawnWire :: EntityWire
-spawnWire = mkGen $ \dt (objects, action) -> do
+spawnWire :: [Rectangle] -> EntityWire
+spawnWire spawnRectangles = mkGen $ \dt (objects, action) -> do
   identifier <- Identifier.nextRandom
-  let wire = Entity.entityWire $ Entity.empty identifier
+  spawnRectangle <- pick spawnRectangles
+  let position = rectangleCentre spawnRectangle
+  let wire = Entity.entityWire $ Entity.empty identifier position
   stepWire wire dt (objects, action)
 
 -- Returns a new entity wire given an initial entity state.

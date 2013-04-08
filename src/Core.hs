@@ -2,7 +2,9 @@ module Core where
 
 import Action
 import Control.Wire
-import Identifier
+import Identifier (Identifier)
+import System.Random (randomRIO)
+import Prelude hiding ((.), id)
 
 type Age     = Int
 type Health  = Int
@@ -24,3 +26,7 @@ continually wire = switchBy (const wire) wire
 rotate :: [a] -> [a]
 rotate [] = []
 rotate (x:xs) = xs ++ [x]
+
+-- Picks a random element from the list.
+pick :: [a] -> IO a
+pick xs = randomRIO (0, (length xs - 1)) >>= return . (xs !!)

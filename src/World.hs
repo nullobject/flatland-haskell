@@ -26,6 +26,7 @@ data World = World
   , layers              :: [Layer]
   , players             :: [Player]
   , collisionRectangles :: [Rectangle]
+  , spawnRectangles     :: [Rectangle]
   , tileWidth           :: Int
   , tileHeight          :: Int
   } deriving (Generic, Show)
@@ -42,11 +43,13 @@ empty tiledMap =
         , layers              = layers
         , players             = []
         , collisionRectangles = collisionRectangles
+        , spawnRectangles     = spawnRectangles
         , tileWidth           = tileWidth
         , tileHeight          = tileHeight }
 
   where layers = Map.getTileLayers tiledMap
         collisionRectangles = Map.getCollisionRectangles tiledMap
+        spawnRectangles = Map.getSpawnRectangles tiledMap
         tileWidth = Map.mapTileWidth tiledMap
         tileHeight = Map.mapTileHeight tiledMap
 
@@ -63,11 +66,11 @@ entities world = Maybe.catMaybes $ map Player.entity $ players world
 worldWire :: World -> WorldWire
 worldWire world = proc messages -> do
   age' <- countFrom age0 -< 1
-  players' <- Player.routeWire $ Player.playerWire . Player.empty -< (objects, messages)
+  players' <- wire -< (objects, messages)
 
   returnA -< world { age     = age'
                    , players = players' }
 
-  where age0       = age world
-        objects    = map getRectangleAABB rectangles
-        rectangles = collisionRectangles world
+  where age0 = age world
+        objects = map getRectangleAABB $ collisionRectangles world
+        wire = Player.routeWire $ (Player.playerWire $ spawnRectangles world) . Player.empty
