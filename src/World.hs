@@ -26,6 +26,8 @@ data World = World
   , layers              :: [Layer]
   , players             :: [Player]
   , collisionRectangles :: [Rectangle]
+  , tileWidth           :: Int
+  , tileHeight          :: Int
   } deriving (Generic, Show)
 
 instance ToJSON World
@@ -39,10 +41,14 @@ empty tiledMap =
   World { age                 = 0
         , layers              = layers
         , players             = []
-        , collisionRectangles = collisionRectangles }
+        , collisionRectangles = collisionRectangles
+        , tileWidth           = tileWidth
+        , tileHeight          = tileHeight }
 
   where layers = Map.getTileLayers tiledMap
         collisionRectangles = Map.getCollisionRectangles tiledMap
+        tileWidth = Map.mapTileWidth tiledMap
+        tileHeight = Map.mapTileHeight tiledMap
 
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player

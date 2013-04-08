@@ -96,38 +96,38 @@ function partial(fn) {
     createjs.Ticker.useRAF = true;
     createjs.Ticker.setFPS(60);
 
-    function updateDebug(rectangles, scale, container) {
+    function updateDebug(rectangles, tileWidth, tileHeight, container) {
       if (debugRendered) return;
       debugRendered = true;
       return rectangles.map(function(rectangle) {
         var shape = new createjs.Shape()
         shape.graphics.beginFill("#ff0000").drawRect(
-          rectangle.rectanglePosition[0] * scale,
-          rectangle.rectanglePosition[1] * scale,
-          rectangle.rectangleExtents[0] * scale,
-          rectangle.rectangleExtents[1] * scale
+          rectangle.rectanglePosition[0] * tileWidth,
+          rectangle.rectanglePosition[1] * tileHeight,
+          rectangle.rectangleExtents[0] * tileWidth,
+          rectangle.rectangleExtents[1] * tileHeight
         );
         container.addChild(shape);
         return shape;
       });
     }
 
-    function updatePlayfield(layers, scale, container) {
+    function updatePlayfield(layers, tileWidth, tileHeight, container) {
       if (playfieldRendered) return;
       playfieldRendered = true;
       return layers.map(function(layer, index) {
         var subContainer = new createjs.Container();
         container.addChild(subContainer);
-        updateTiles(layer.tiles, scale, subContainer);
+        updateTiles(layer.tiles, tileWidth, tileHeight, subContainer);
         return subContainer;
       });
     }
 
-    function updateTiles(tiles, scale, container) {
+    function updateTiles(tiles, tileWidth, tileHeight, container) {
       return tiles.map(function(tile, index) {
         var sprite = addTile(tile, container, spriteSheets.tiles),
-          x = tile.position[0] * scale,
-          y = tile.position[1] * scale;
+          x = tile.position[0] * tileWidth,
+          y = tile.position[1] * tileHeight;
 
         if (tile.dFlipped && tile.hFlipped && tile.vFlipped) {
           sprite.set({x: x, y: y, scaleY: -1, rotation: -90, regX: 16, regY: 16});
@@ -153,11 +153,11 @@ function partial(fn) {
       });
     }
 
-    function updateEntities(entities, scale, container) {
+    function updateEntities(entities, tileWidth, tileHeight, container) {
       return entities.map(function(entity) {
         var sprite = container.getChildByName(entity.id) || addEntity(entity, container, spriteSheets.entities);
         sprite.gotoAndPlay(entity.state);
-        sprite.setTransform(entity.position[0] * scale, entity.position[1] * scale);
+        sprite.setTransform(entity.position[0] * tileWidth, entity.position[1] * tileHeight);
         return sprite;
       });
     }
@@ -169,15 +169,15 @@ function partial(fn) {
 
     source.onmessage = function(message) {
       var data = JSON.parse(message.data),
-        scale = 16,
         entities = data
           .players
           .map(function(player) { return player.entity; })
           .filter(function(player) { return player != null });
 
-      updateDebug(data.collisionRectangles, scale, debugContainer);
-      updatePlayfield(data.layers, scale, playfieldContainer);
-      updateEntities(entities, scale, entitiesContainer);
+      console.log(data);
+      updateDebug(data.collisionRectangles, data.tileWidth, data.tileHeight, debugContainer);
+      updatePlayfield(data.layers, data.tileWidth, data.tileHeight, playfieldContainer);
+      updateEntities(entities, data.tileWidth, data.tileHeight, entitiesContainer);
     }
   });
 }());

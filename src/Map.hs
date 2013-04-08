@@ -6,6 +6,8 @@ module Map
   , Layer
   , Tile
   , T.loadMapFile
+  , T.mapTileWidth
+  , T.mapTileHeight
   , T.TiledMap
   ) where
 
