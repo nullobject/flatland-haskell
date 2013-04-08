@@ -21,12 +21,12 @@
  </tileset>
  <layer name="background" width="16" height="16">
   <data encoding="base64" compression="zlib">
-   eJyzZ2BgsKcQS5KJh6L+cCCOoEB/MhCnDFH/o6sdivo/IWFy9f+lUD+l9oPwPyT9lGAA+BYuSA==
+   eJyzZ2BgsKcQ7yIT00s/PxXtDwfiCAr0JwNxCp39Ty396GqHov5PSBhdP650gq7/Lw79lNpPiv5/SPopwQA+hZm/
   </data>
  </layer>
  <layer name="objects" width="16" height="16">
   <data encoding="base64" compression="zlib">
-   eJxjYKAcdENwAxA7APEBMvUvAOkF4gQy9IPsfgC1X4EM/WB9MHPI0A92N8wfpOofBUMPCDAyNAyk/b+plM4A0wkViQ==
+   eJxjYBgFo2AUkAoEGBkaKNH/m4FhAXVcQhkAAExOAi0=
   </data>
  </layer>
  <objectgroup name="collision" width="16" height="16">

@@ -35,11 +35,12 @@ data Layer = Layer
 
 instance ToJSON Layer
 
--- Returns the collision rectangles for the given tiled map.
+-- Returns the collision rectangles for the tiled map.
 getCollisionRectangles :: T.TiledMap -> [Rectangle]
 getCollisionRectangles tiledMap = map (calculateRectangle extents) $ T.layerObjects $ getLayer "collision" tiledMap
   where extents = getTileExtents tiledMap
 
+-- Returns the spawn rectangles for the tiled map.
 getSpawnRectangles :: T.TiledMap -> [Rectangle]
 getSpawnRectangles tiledMap = map (calculateRectangle extents) $ T.layerObjects $ getLayer "spawn" tiledMap
   where extents = getTileExtents tiledMap
