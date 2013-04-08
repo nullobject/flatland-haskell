@@ -113,6 +113,13 @@ collisionWire (position0, velocity0) =
     let (position, velocity, contacts) = collideWithObjects objects position0 impulse
     in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
+-- Spawns a new entity.
+spawnWire :: EntityWire
+spawnWire = mkGen $ \dt (objects, action) -> do
+  identifier <- Identifier.nextRandom
+  let wire = Entity.entityWire $ Entity.empty identifier
+  stepWire wire dt (objects, action)
+
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
 entityWire entity = proc (objects, action) -> do

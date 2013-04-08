@@ -16,8 +16,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Traversable as Traversable
 import           GHC.Generics (Generic)
-import           Identifier (Identifier)
-import qualified Identifier
+import           Identifier
 import           Prelude hiding ((.), id)
 
 data State =
@@ -54,13 +53,6 @@ empty identifier = Player
   , entity    = Nothing
   }
 
--- Spawns a new entity.
-spawnEntityWire :: EntityWire
-spawnEntityWire = mkGen $ \dt (objects, action) -> do
-  identifier <- Identifier.nextRandom
-  let wire = Entity.entityWire $ Entity.empty identifier
-  stepWire wire dt (objects, action)
-
 -- Returns a new player wire given an initial player state.
 --
 -- When a 'spawn' message is received the player enters the Spawning state.
@@ -74,7 +66,7 @@ playerWire player = proc (objects, action) -> do
 
   where entityWire = pure (Dead, Nothing) . Wire.until (\(objects, action) -> action == Spawn) -->
                      pure (Spawning, Nothing) . for 3 -->
-                     pure Alive &&& spawnEntityWire
+                     pure Alive &&& Entity.spawnWire
 
 -- Evolves a list of player wires, routing actions which are addressed to them
 -- by matching their identifiers. Actions which are addressed to unknown player
