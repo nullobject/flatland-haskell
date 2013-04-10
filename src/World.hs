@@ -2,6 +2,7 @@
 
 module World where
 
+import           Bullet
 import           Collision (getRectangleAABB)
 import           Control.Wire
 import           Core
@@ -25,6 +26,7 @@ data World = World
   { age                 :: Age
   , layers              :: [Layer]
   , players             :: [Player]
+  , bullets             :: [Bullet]
   , collisionRectangles :: [Rectangle]
   , spawnRectangles     :: [Rectangle]
   , tileWidth           :: Int
@@ -42,6 +44,7 @@ empty tiledMap =
   World { age                 = 0
         , layers              = layers
         , players             = []
+        , bullets             = []
         , collisionRectangles = collisionRectangles
         , spawnRectangles     = spawnRectangles
         , tileWidth           = tileWidth
@@ -66,10 +69,14 @@ entities world = Maybe.catMaybes $ map Player.entity $ players world
 worldWire :: World -> WorldWire
 worldWire world = proc messages -> do
   age' <- countFrom age0 -< 1
-  players' <- wire -< (objects, messages)
+  playerBullets <- wire -< (objects, messages)
+
+  let players' = map fst playerBullets
+  let bullets' = Maybe.catMaybes $ map snd playerBullets
 
   returnA -< world { age     = age'
-                   , players = players' }
+                   , players = players'
+                   , bullets = bullets' }
 
   where age0 = age world
         objects = map getRectangleAABB $ collisionRectangles world

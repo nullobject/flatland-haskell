@@ -3,6 +3,7 @@
 module Player where
 
 import           Action
+import           Bullet
 import           Collision (AABB)
 import           Control.Wire
 import qualified Control.Wire as Wire
@@ -39,10 +40,11 @@ data Player = Player
 
 instance ToJSON Player
 
-type RouteWire = MyWire ([AABB], [Message]) [Player]
+type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
 
--- A player wire takes an action and produces a new player state.
-type PlayerWire = MyWire ([AABB], Action) Player
+-- A player wire takes an action and produces a player state and a possible
+-- bullet state.
+type PlayerWire = MyWire ([AABB], Action) (Player, Maybe Bullet)
 
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
@@ -60,13 +62,14 @@ empty identifier = Player
 -- After 3 seconds, an entity is spawned and the player enters the Alive state.
 playerWire :: [Rectangle] -> Player -> PlayerWire
 playerWire spawnRectangles player = proc (objects, action) -> do
-  (state', entity') <- continually $ entityWire -< (objects, action)
+  (state', (entity', bullet')) <- continually $ entityWire -< (objects, action)
 
-  returnA -< player { state  = state'
-                    , entity = entity'}
+  returnA -< ( player { state  = state'
+                      , entity = entity'}
+             , bullet' )
 
-  where entityWire = pure (Dead, Nothing) . Wire.until (\(objects, action) -> action == Spawn) -->
-                     pure (Spawning, Nothing) . for 3 -->
+  where entityWire = pure (Dead, (Nothing, Nothing)) . Wire.until (\(objects, action) -> action == Spawn) -->
+                     pure (Spawning, (Nothing, Nothing)) . for 3 -->
                      pure Alive &&& Entity.spawnWire spawnRectangles
 
 -- Evolves a list of player wires, routing actions which are addressed to them
@@ -89,9 +92,9 @@ routeWire constructor = route Map.empty
       res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (objects, Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
 
       -- WTF does this do?
-      let resx = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res
+      let res' = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res
 
-      return (fmap Map.elems (fmap (fmap fst) resx), route (fmap snd res))
+      return (fmap Map.elems (fmap (fmap fst) res'), route (fmap snd res))
 
     -- Spawns a new player wire if one with the identifier doesn't already exist.
     spawn :: PlayerWireMap -> Identifier -> PlayerWireMap

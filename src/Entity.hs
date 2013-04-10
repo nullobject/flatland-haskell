@@ -3,6 +3,7 @@
 module Entity where
 
 import           Action
+import           Bullet
 import           Collision
 import           Control.Wire
 import qualified Control.Wire as Wire
@@ -11,7 +12,8 @@ import           Data.Aeson (toJSON, ToJSON)
 import           Data.Char (toLower)
 import           Data.VectorSpace
 import qualified Data.Maybe as Maybe
-import           Geometry
+import           Geometry (Position, Rectangle, Velocity)
+import qualified Geometry
 import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
@@ -41,11 +43,14 @@ data Entity = Entity
 instance ToJSON Entity
 
 -- An entity wire takes a list of AABBs and an action and produces a new entity
--- state.
-type EntityWire = MyWire ([AABB], Action) (Maybe Entity)
+-- state and a bullet.
+type EntityWire = MyWire ([AABB], Action) (Maybe Entity, Maybe Bullet)
 
-speed :: Double
-speed = 1
+entitySpeed :: Double
+entitySpeed = 1
+
+bulletSpeed :: Double
+bulletSpeed = 1
 
 -- Returns a new entity.
 empty :: Identifier -> Position -> Entity
@@ -88,7 +93,7 @@ impulseWire = execute_ $ return . update
   where update (direction, Forward) = vector direction
         update (direction, Reverse) = -(vector direction)
         update _                    = zeroV
-        vector direction = (cos direction, sin direction) ^* speed
+        vector direction = (cos direction, sin direction) ^* entitySpeed
 
 -- The health wire returns the current health of the entity. It inhibits when
 -- the entity dies.
@@ -113,6 +118,16 @@ collisionWire (position0, velocity0) =
     let (position, velocity, contacts) = collideWithObjects objects position0 impulse
     in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
+-- The bullet wire produces a bullet moving in a direction from a position if
+-- the player is attacking.
+bulletWire :: MyWire (Direction, Position, Action) (Maybe Bullet)
+bulletWire = execute_ $ return . update
+  where update (direction, position, Attack) = Just Bullet { bulletPosition = position
+                                                           , bulletVelocity = vector direction }
+        update _                             = Nothing
+        vector direction = (cos direction, sin direction) ^* bulletSpeed
+
+
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
 entityWire entity = proc (objects, action) -> do
@@ -123,14 +138,16 @@ entityWire entity = proc (objects, action) -> do
   impulse'                          <- impulseWire                          -< (direction', action')
   (position', velocity', contacts') <- collisionWire (position0, velocity0) -< (objects, impulse')
   health'                           <- healthWire health0                   -< age'
+  bullet'                           <- bulletWire                           -< (direction', position', action')
 
-  returnA -< Just entity { state     = state'
-                         , age       = age'
-                         , direction = direction'
-                         , position  = position'
-                         , velocity  = velocity'
-                         , health    = health'
-                         , energy    = energy' }
+  returnA -< ( Just entity { state     = state'
+                           , age       = age'
+                           , direction = direction'
+                           , position  = position'
+                           , velocity  = velocity'
+                           , health    = health'
+                           , energy    = energy' }
+             , bullet' )
 
   where action0       = Action.Idle
         age0          = age entity
@@ -145,6 +162,6 @@ spawnWire :: [Rectangle] -> EntityWire
 spawnWire spawnRectangles = mkGen $ \dt (objects, action) -> do
   identifier <- Identifier.nextRandom
   spawnRectangle <- pick spawnRectangles
-  let position = rectangleCentre spawnRectangle
+  let position = Geometry.rectangleCentre spawnRectangle
   let wire = Entity.entityWire $ Entity.empty identifier position
   stepWire wire dt (objects, action)
