@@ -1,23 +1,22 @@
-{-# LANGUAGE DeriveGeneric, TupleSections #-}
+{-# LANGUAGE TupleSections #-}
 
 module Player where
 
 import           Action
 import           Bullet
 import           Collision (AABB)
-import           Control.Wire
+import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
 import           Entity (Entity, EntityWire)
 import qualified Entity
-import           Data.Aeson (toJSON, ToJSON)
+import           Data.Aeson
 import           Data.Char (toLower)
 import qualified Data.Key as Key
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Traversable as Traversable
 import           Geometry (Rectangle)
-import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
 
@@ -25,7 +24,7 @@ data State =
     Dead
   | Spawning
   | Alive
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Show)
 
 instance ToJSON State where
   toJSON s = toJSON $ map toLower $ show s
@@ -33,12 +32,15 @@ instance ToJSON State where
 -- | A player represents the state of a player in the game. A player controls
 -- an entity in the world.
 data Player = Player
-  { id     :: Identifier
-  , state  :: State
-  , entity :: Maybe Entity
-  } deriving (Generic, Show)
+  { playerId     :: Identifier
+  , playerState  :: State
+  , playerEntity :: Maybe Entity
+  } deriving (Show)
 
-instance ToJSON Player
+instance ToJSON Player where
+  toJSON player = object [ "id"     .= playerId     player
+                         , "state"  .= playerState  player
+                         , "entity" .= playerEntity player ]
 
 type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
 
@@ -51,9 +53,9 @@ type PlayerWireMap = Map Identifier PlayerWire
 
 empty :: Identifier -> Player
 empty identifier = Player
-  { Player.id = identifier
-  , state     = Dead
-  , entity    = Nothing
+  { playerId     = identifier
+  , playerState  = Dead
+  , playerEntity = Nothing
   }
 
 -- Returns a new player wire given an initial player state.
@@ -64,8 +66,8 @@ playerWire :: [Rectangle] -> Player -> PlayerWire
 playerWire spawnRectangles player = proc (objects, action) -> do
   (state', (entity', bullet')) <- continually $ entityWire -< (objects, action)
 
-  returnA -< ( player { state  = state'
-                      , entity = entity'}
+  returnA -< ( player { playerState  = state'
+                      , playerEntity = entity'}
              , bullet' )
 
   where entityWire = pure (Dead, (Nothing, Nothing)) . Wire.until (\(objects, action) -> action == Spawn) -->

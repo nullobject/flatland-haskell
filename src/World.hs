@@ -62,11 +62,11 @@ empty tiledMap =
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player
 getPlayer identifier world = List.find predicate $ worldPlayers world
-  where predicate = \player -> Player.id player == identifier
+  where predicate = \player -> Player.playerId player == identifier
 
 -- Returns the entities in the world.
 worldEntities :: World -> [Entity]
-worldEntities world = Maybe.catMaybes $ map Player.entity $ worldPlayers world
+worldEntities world = Maybe.catMaybes $ map Player.playerEntity $ worldPlayers world
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire

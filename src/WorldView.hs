@@ -37,7 +37,7 @@ forPlayer player world =
         entities            = World.worldEntities            world
         collisionRectangles = World.worldCollisionRectangles world
 
-        visibility = case Player.entity player of
+        visibility = case Player.playerEntity player of
                      Just entity -> Visibility.calculateVisibility (Entity.position entity) collisionRectangles
                      Nothing     -> []
 
