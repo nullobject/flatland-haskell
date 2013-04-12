@@ -4,10 +4,10 @@ module Visibility
   , Endpoint (..)
   ) where
 
-import Core (rotate)
-import Data.List (delete, insertBy, sort)
-import Data.VectorSpace
-import Geometry
+import           Core
+import qualified Data.List as List
+import           Data.VectorSpace
+import           Geometry
 
 -- An endpoint to be processed by the visibility algorithm.
 data Endpoint = Endpoint Point Segment Angle Bool deriving (Eq, Show)
@@ -48,7 +48,7 @@ calculateTriangles :: Point -> [Endpoint] -> [Triangle]
 calculateTriangles origin endpoints = map snapTriangle triangles
   where (angle, segments, _) = foldl step' (0, [], []) endpoints'
         (_, _, triangles)    = foldl step' (angle, segments, []) endpoints'
-        endpoints' = sort endpoints
+        endpoints' = List.sort endpoints
         step' = step origin
 
 -- Steps the algorithm to the next endpoint, producing a new triangle if the
@@ -56,8 +56,8 @@ calculateTriangles origin endpoints = map snapTriangle triangles
 step :: Point -> (Angle, [Segment], [Triangle]) -> Endpoint -> (Angle, [Segment], [Triangle])
 step origin (angle, openSegments, triangles) (Endpoint _ segment currentAngle begin) = (angle', openSegments', triangles')
   where openSegments' = if begin
-                        then insertBy (comparator origin) segment openSegments
-                        else delete segment openSegments
+                        then List.insertBy (comparator origin) segment openSegments
+                        else List.delete segment openSegments
 
         openSegment = if null openSegments
                       then Nothing
