@@ -7,11 +7,9 @@ module Collision
   , Contact (..)
   ) where
 
-import           Data.Aeson (toJSON, ToJSON)
 import qualified Data.Maybe as Maybe
 import           Data.VectorSpace
-import           Geometry (Extents, Point, Position, Rectangle (..), Velocity)
-import qualified Geometry
+import           Geometry
 
 -- An axis-aligned bounding box.
 data AABB = AABB Point Extents deriving (Eq, Show)
