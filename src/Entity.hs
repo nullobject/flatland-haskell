@@ -10,8 +10,7 @@ import           Data.Aeson
 import           Data.Char (toLower)
 import           Data.VectorSpace
 import qualified Data.Maybe as Maybe
-import           Geometry (Position, Rectangle, Velocity)
-import qualified Geometry
+import           Geometry
 import           Identifier
 import           Prelude hiding ((.), id)
 
@@ -58,8 +57,8 @@ bulletSpeed :: Double
 bulletSpeed = 1
 
 -- Returns a new entity.
-empty :: Identifier -> Position -> Entity
-empty identifier position = Entity
+emptyEntity :: Identifier -> Position -> Entity
+emptyEntity identifier position = Entity
   { entityId        = identifier
   , entityState     = Entity.Idle
   , entityAge       = 0
@@ -167,6 +166,6 @@ spawnWire :: [Rectangle] -> EntityWire
 spawnWire spawnRectangles = mkGen $ \dt (objects, action) -> do
   identifier <- Identifier.nextRandom
   spawnRectangle <- pick spawnRectangles
-  let position = Geometry.rectangleCentre spawnRectangle
-  let wire = Entity.entityWire $ Entity.empty identifier position
+  let position = rectangleCentre spawnRectangle
+  let wire = entityWire $ emptyEntity identifier position
   stepWire wire dt (objects, action)
