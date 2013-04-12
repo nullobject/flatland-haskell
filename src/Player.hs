@@ -51,8 +51,8 @@ type PlayerWire = MyWire ([AABB], Action) (Player, Maybe Bullet)
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
 
-empty :: Identifier -> Player
-empty identifier = Player
+emptyPlayer :: Identifier -> Player
+emptyPlayer identifier = Player
   { playerId     = identifier
   , playerState  = Dead
   , playerEntity = Nothing

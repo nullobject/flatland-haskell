@@ -1,19 +1,17 @@
 module World where
 
 import           Bullet
-import           Collision (getRectangleAABB)
+import           Collision
 import           Control.Wire hiding (object)
 import           Core
 import           Data.Aeson
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
-import           Entity (Entity)
-import           Geometry (Rectangle)
+import           Entity
+import           Geometry
 import           Identifier
-import           Map (Layer, TiledMap)
-import qualified Map
-import           Player (Player)
-import qualified Player
+import           Map
+import           Player
 import           Prelude hiding ((.), id)
 
 type Size = Int
@@ -42,8 +40,8 @@ instance ToJSON World where
 type WorldWire = MyWire [Message] World
 
 -- Returns a new world.
-empty :: TiledMap -> World
-empty tiledMap =
+emptyWorld :: TiledMap -> World
+emptyWorld tiledMap =
   World { worldAge                 = 0
         , worldLayers              = layers
         , worldPlayers             = []
@@ -62,11 +60,11 @@ empty tiledMap =
 -- Returns the player with the given identifier.
 getPlayer :: Identifier -> World -> Maybe Player
 getPlayer identifier world = List.find predicate $ worldPlayers world
-  where predicate = \player -> Player.playerId player == identifier
+  where predicate = \player -> playerId player == identifier
 
 -- Returns the entities in the world.
 worldEntities :: World -> [Entity]
-worldEntities world = Maybe.catMaybes $ map Player.playerEntity $ worldPlayers world
+worldEntities world = Maybe.catMaybes $ map playerEntity $ worldPlayers world
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
@@ -83,4 +81,4 @@ worldWire world = proc messages -> do
 
   where age0 = worldAge world
         objects = map getRectangleAABB $ worldCollisionRectangles world
-        wire = Player.routeWire $ (Player.playerWire $ worldSpawnRectangles world) . Player.empty
+        wire = routeWire $ (playerWire $ worldSpawnRectangles world) . emptyPlayer

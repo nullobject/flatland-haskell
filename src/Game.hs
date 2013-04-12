@@ -32,7 +32,7 @@ respond world = mapM_ respond'
 run :: Channel Message WorldView -> Chan Wai.EventSource.ServerEvent -> IO ()
 run messageChannel eventChannel = do
   tiledMap <- Map.loadMapFile "static/test.tmx"
-  let wire = World.worldWire $ World.empty tiledMap
+  let wire = World.worldWire $ World.emptyWorld tiledMap
   run' wire clockSession
   where
     run' wire session = do
