@@ -38,7 +38,7 @@ forPlayer player world =
         collisionRectangles = World.worldCollisionRectangles world
 
         visibility = case Player.playerEntity player of
-                     Just entity -> Visibility.calculateVisibility (Entity.position entity) collisionRectangles
+                     Just entity -> Visibility.calculateVisibility (Entity.entityPosition entity) collisionRectangles
                      Nothing     -> []
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
@@ -46,4 +46,4 @@ forPlayer player world =
 -- Returns true if the entity is in the visibility manifold.
 entityVisible :: Entity -> [Triangle] -> Bool
 entityVisible entity visibility = any (Geometry.intersects position) visibility
-  where position = Entity.position entity
+  where position = Entity.entityPosition entity

@@ -1,20 +1,17 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module Entity where
 
 import           Action
 import           Bullet
 import           Collision
-import           Control.Wire
+import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
-import           Data.Aeson (toJSON, ToJSON)
+import           Data.Aeson
 import           Data.Char (toLower)
 import           Data.VectorSpace
 import qualified Data.Maybe as Maybe
 import           Geometry (Position, Rectangle, Velocity)
 import qualified Geometry
-import           GHC.Generics (Generic)
 import           Identifier
 import           Prelude hiding ((.), id)
 
@@ -23,24 +20,32 @@ data State =
   | Attacking
   | Moving
   | Turning
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Show)
 
 instance ToJSON State where
   toJSON s = toJSON $ map toLower $ show s
 
 -- An entity is an actor in the world.
 data Entity = Entity
-  { id        :: Identifier
-  , state     :: State
-  , age       :: Age
-  , direction :: Direction
-  , position  :: Position
-  , velocity  :: Velocity
-  , health    :: Health
-  , energy    :: Energy
-  } deriving (Generic, Show)
+  { entityId        :: Identifier
+  , entityState     :: State
+  , entityAge       :: Age
+  , entityDirection :: Direction
+  , entityPosition  :: Position
+  , entityVelocity  :: Velocity
+  , entityHealth    :: Health
+  , entityEnergy    :: Energy
+  } deriving (Show)
 
-instance ToJSON Entity
+instance ToJSON Entity where
+  toJSON entity = object [ "id"        .= entityId        entity
+                         , "state"     .= entityState     entity
+                         , "age"       .= entityAge       entity
+                         , "direction" .= entityDirection entity
+                         , "position"  .= entityPosition  entity
+                         , "velocity"  .= entityVelocity  entity
+                         , "health"    .= entityHealth    entity
+                         , "energy"    .= entityEnergy    entity ]
 
 -- An entity wire takes a list of AABBs and an action and produces a new entity
 -- state and a bullet.
@@ -55,14 +60,14 @@ bulletSpeed = 1
 -- Returns a new entity.
 empty :: Identifier -> Position -> Entity
 empty identifier position = Entity
-  { Entity.id = identifier
-  , state     = Entity.Idle
-  , age       = 0
-  , direction = 0
-  , position  = position
-  , velocity  = zeroV
-  , health    = 100
-  , energy    = 100 }
+  { entityId        = identifier
+  , entityState     = Entity.Idle
+  , entityAge       = 0
+  , entityDirection = 0
+  , entityPosition  = position
+  , entityVelocity  = zeroV
+  , entityHealth    = 100
+  , entityEnergy    = 100 }
 
 -- If the entity has enough energy then it returns the updated energy value and
 -- the action. Otherwise it returns the original energy value and defaults to
@@ -140,22 +145,22 @@ entityWire entity = proc (objects, action) -> do
   health'                           <- healthWire health0                   -< age'
   bullet'                           <- bulletWire                           -< (direction', position', action')
 
-  returnA -< ( Just entity { state     = state'
-                           , age       = age'
-                           , direction = direction'
-                           , position  = position'
-                           , velocity  = velocity'
-                           , health    = health'
-                           , energy    = energy' }
+  returnA -< ( Just entity { entityState     = state'
+                           , entityAge       = age'
+                           , entityDirection = direction'
+                           , entityPosition  = position'
+                           , entityVelocity  = velocity'
+                           , entityHealth    = health'
+                           , entityEnergy    = energy' }
              , bullet' )
 
   where action0       = Action.Idle
-        age0          = age entity
-        direction0    = direction entity
-        energy0       = energy entity
-        health0       = health entity
-        position0     = position entity
-        velocity0     = velocity entity
+        age0          = entityAge       entity
+        direction0    = entityDirection entity
+        energy0       = entityEnergy    entity
+        health0       = entityHealth    entity
+        position0     = entityPosition  entity
+        velocity0     = entityVelocity  entity
 
 -- Spawns a new entity.
 spawnWire :: [Rectangle] -> EntityWire
