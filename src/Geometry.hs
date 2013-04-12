@@ -1,12 +1,9 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module Geometry where
 
 import Core
-import Data.Aeson (ToJSON)
+import Data.Aeson
 import Data.AffineSpace
 import Data.VectorSpace
-import GHC.Generics (Generic)
 
 type Vector   = (Double, Double)
 type Angle    = Double
@@ -24,9 +21,11 @@ data Triangle = Triangle Point Point Point deriving (Eq, Show)
 -- A rectangle is a 4-sided shape.
 data Rectangle = Rectangle
   { rectanglePosition :: Point
-  , rectangleExtents  :: Extents } deriving (Eq, Generic, Show)
+  , rectangleExtents  :: Extents } deriving (Eq, Show)
 
-instance ToJSON Rectangle
+instance ToJSON Rectangle where
+  toJSON rectangle = object [ "position" .= rectanglePosition rectangle
+                            , "extents"  .= rectangleExtents rectangle ]
 
 -- Calculates the angle between two points.
 angleBetween :: Point -> Point -> Angle

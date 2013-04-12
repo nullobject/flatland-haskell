@@ -90,7 +90,7 @@ function partial(fn) {
 
     stage.addChild(playfieldContainer);
     stage.addChild(entitiesContainer);
-    // stage.addChild(debugContainer);
+    stage.addChild(debugContainer);
 
     createjs.Ticker.addEventListener("tick", function() { stage.update(); });
     createjs.Ticker.useRAF = true;
@@ -102,10 +102,10 @@ function partial(fn) {
       return rectangles.map(function(rectangle) {
         var shape = new createjs.Shape()
         shape.graphics.beginFill("#ff0000").drawRect(
-          rectangle.rectanglePosition[0] * tileWidth,
-          rectangle.rectanglePosition[1] * tileHeight,
-          rectangle.rectangleExtents[0] * tileWidth,
-          rectangle.rectangleExtents[1] * tileHeight
+          rectangle.position[0] * tileWidth,
+          rectangle.position[1] * tileHeight,
+          rectangle.extents[0] * tileWidth,
+          rectangle.extents[1] * tileHeight
         );
         container.addChild(shape);
         return shape;
