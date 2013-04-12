@@ -1,14 +1,11 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module WorldView
   ( forPlayer
   , WorldView (..)
   ) where
 
-import           Data.Aeson (ToJSON)
+import           Data.Aeson
 import           Geometry (Triangle)
 import qualified Geometry
-import           GHC.Generics (Generic)
 import           Entity (Entity)
 import qualified Entity
 import           Player (Player)
@@ -18,19 +15,22 @@ import           World (World)
 import qualified World
 
 data WorldView = WorldView
-  { age      :: Int
-  , player   :: Player
-  , entities :: [Entity]
-  } deriving (Generic, Show)
+  { worldViewAge      :: Int
+  , worldViewPlayer   :: Player
+  , worldViewEntities :: [Entity]
+  } deriving (Show)
 
-instance ToJSON WorldView
+instance ToJSON WorldView where
+  toJSON worldView = object [ "age"      .= worldViewAge      worldView
+                            , "player"   .= worldViewPlayer   worldView
+                            , "entities" .= worldViewEntities worldView ]
 
 -- Returns a new world view for the given player.
 forPlayer :: Player -> World -> WorldView
 forPlayer player world =
-  WorldView { age      = age
-            , player   = player
-            , entities = visibleEntities
+  WorldView { worldViewAge      = age
+            , worldViewPlayer   = player
+            , worldViewEntities = visibleEntities
             }
 
   where age      = World.age world
