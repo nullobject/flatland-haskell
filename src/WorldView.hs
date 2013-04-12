@@ -33,9 +33,9 @@ forPlayer player world =
             , worldViewEntities = visibleEntities
             }
 
-  where age      = World.age world
-        entities = World.entities world
-        collisionRectangles = World.collisionRectangles world
+  where age                 = World.worldAge                 world
+        entities            = World.worldEntities            world
+        collisionRectangles = World.worldCollisionRectangles world
 
         visibility = case Player.entity player of
                      Just entity -> Visibility.calculateVisibility (Entity.position entity) collisionRectangles
