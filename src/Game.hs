@@ -8,13 +8,11 @@ import           Control.Wire
 import           Core
 import           Data.Aeson (encode, ToJSON)
 import qualified Data.Maybe as Maybe
-import qualified Map
+import           Map
 import qualified Network.Wai.EventSource as Wai.EventSource
 import           Prelude hiding ((.), id)
-import           World (World)
-import qualified World
-import           WorldView (WorldView)
-import qualified WorldView
+import           World
+import           WorldView
 
 oneSecond :: Int
 oneSecond = 1000000
@@ -24,15 +22,15 @@ respond :: World -> [Request Message WorldView] -> IO ()
 respond world = mapM_ respond'
   where
     respond' (Request (identifier, _) sender) = do
-      let player = Maybe.fromJust $ World.getPlayer identifier world
-      let worldView = WorldView.forPlayer player world
+      let player = Maybe.fromJust $ getPlayer identifier world
+      let worldView = forPlayer player world
       sender `tell` worldView
 
 -- TODO: handle the case where the world wire inhibits.
 run :: Channel Message WorldView -> Chan Wai.EventSource.ServerEvent -> IO ()
 run messageChannel eventChannel = do
-  tiledMap <- Map.loadMapFile "static/test.tmx"
-  let wire = World.worldWire $ World.emptyWorld tiledMap
+  tiledMap <- loadMapFile "static/test.tmx"
+  let wire = worldWire $ emptyWorld tiledMap
   run' wire clockSession
   where
     run' wire session = do
