@@ -3,16 +3,12 @@ module WorldView
   , WorldView (..)
   ) where
 
-import           Data.Aeson
-import           Geometry (Triangle)
-import qualified Geometry
-import           Entity (Entity)
-import qualified Entity
-import           Player (Player)
-import qualified Player
-import qualified Visibility
-import           World (World)
-import qualified World
+import Data.Aeson
+import Geometry
+import Entity
+import Player
+import Visibility
+import World
 
 data WorldView = WorldView
   { worldViewAge      :: Int
@@ -33,17 +29,17 @@ forPlayer player world =
             , worldViewEntities = visibleEntities
             }
 
-  where age                 = World.worldAge                 world
-        entities            = World.worldEntities            world
-        collisionRectangles = World.worldCollisionRectangles world
+  where age                 = worldAge                 world
+        entities            = worldEntities            world
+        collisionRectangles = worldCollisionRectangles world
 
-        visibility = case Player.playerEntity player of
-                     Just entity -> Visibility.calculateVisibility (Entity.entityPosition entity) collisionRectangles
+        visibility = case playerEntity player of
+                     Just entity -> calculateVisibility (entityPosition entity) collisionRectangles
                      Nothing     -> []
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
 
 -- Returns true if the entity is in the visibility manifold.
 entityVisible :: Entity -> [Triangle] -> Bool
-entityVisible entity visibility = any (Geometry.intersects position) visibility
-  where position = Entity.entityPosition entity
+entityVisible entity visibility = any (intersects position) visibility
+  where position = entityPosition entity
