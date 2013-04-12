@@ -1,15 +1,15 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module Bullet where
 
 import Geometry (Position, Velocity)
-import Data.Aeson (ToJSON)
-import GHC.Generics (Generic)
+import Data.Aeson
 
 -- An bullet is an actor in the world.
 data Bullet = Bullet
   { bulletPosition  :: Position
   , bulletVelocity  :: Velocity
-  } deriving (Generic, Show)
+  } deriving (Show)
 
-instance ToJSON Bullet
+instance ToJSON Bullet where
+  toJSON bullet = object [ "position" .= bulletPosition bullet
+                         , "velocity" .= bulletVelocity bullet ]
+
