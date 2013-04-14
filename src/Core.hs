@@ -3,7 +3,6 @@ module Core where
 import Action
 import Control.Wire
 import Identifier (Identifier)
-import System.Random (randomRIO)
 import Prelude hiding ((.), id)
 
 type Age     = Int

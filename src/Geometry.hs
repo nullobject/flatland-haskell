@@ -49,16 +49,16 @@ pointSegmentDistance p (Segment v w)
   | t < 0     = distance p v
   | t > 1     = distance p w
   | otherwise = distance p r
-  where t = ((p - v) <.> (w - v)) / magnitudeSq (w - v)
-        r = v + (t *^ (w - v))
+  where t = ((p ^-^ v) <.> (w ^-^ v)) / magnitudeSq (w ^-^ v)
+        r = v ^+^ (t *^ (w ^-^ v))
 
 -- See:
 --   http://paulbourke.net/geometry/pointlineplane/
 --   http://mathworld.wolfram.com/Line-LineIntersection.html
 --   http://stackoverflow.com/a/565282/1284705
 intersectLines :: Point -> Point -> Point -> Point -> Point
-intersectLines p r q s = p + ((r - p) ^* t)
-  where t = (q - p) <*> (s - q) / (r - p) <*> (s - q)
+intersectLines p r q s = p ^+^ ((r ^-^ p) ^* t)
+  where t = (q ^-^ p) <*> (s ^-^ q) / (r ^-^ p) <*> (s ^-^ q)
 
 -- 2D vector cross product.
 (<*>) :: Point -> Point -> Double
@@ -70,9 +70,9 @@ intersectLines p r q s = p + ((r - p) ^* t)
 --   http://www.blackpawn.com/texts/pointinpoly/
 intersects :: Point -> Triangle -> Bool
 intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
-  where v0 = c - a
-        v1 = b - a
-        v2 = p - a
+  where v0 = c ^-^ a
+        v1 = b ^-^ a
+        v2 = p ^-^ a
 
         dot00 = v0 <.> v0
         dot01 = v0 <.> v1

@@ -4,7 +4,6 @@ module Visibility
   , Endpoint (..)
   ) where
 
-import           Core
 import qualified Data.List as List
 import           Data.VectorSpace
 import           Geometry
@@ -90,17 +89,17 @@ calculateTriangle :: Angle -> Angle -> Point -> Maybe Segment -> Triangle
 calculateTriangle angle1 angle2 a (Just (Segment b c))
   | t == 0    = Triangle a c b -- The lines don't intersect.
   | otherwise = Triangle a p q -- The lines intersect.
-  where d = a + (cos angle1, sin angle1)
-        e = a + (cos angle2, sin angle2)
+  where d = a ^+^ (cos angle1, sin angle1)
+        e = a ^+^ (cos angle2, sin angle2)
         p = intersectLines b c a d
         q = intersectLines b c a e
-        t = (c - b) <*> (d - a)
+        t = (c ^-^ b) <*> (d ^-^ a)
 
 calculateTriangle angle1 angle2 a Nothing = Triangle a p q
-  where b = a + (cos angle1, sin angle1) ^* 500
-        c = a + (cos angle2, sin angle2) ^* 500
-        d = a + (cos angle1, sin angle1)
-        e = a + (cos angle2, sin angle2)
+  where b = a ^+^ (cos angle1, sin angle1) ^* 500
+        c = a ^+^ (cos angle2, sin angle2) ^* 500
+        d = a ^+^ (cos angle1, sin angle1)
+        e = a ^+^ (cos angle2, sin angle2)
         p = intersectLines b c a d
         q = intersectLines b c a e
 

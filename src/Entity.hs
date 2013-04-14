@@ -9,7 +9,6 @@ import           Core
 import           Data.Aeson
 import           Data.Char (toLower)
 import           Data.VectorSpace
-import qualified Data.Maybe as Maybe
 import           Geometry
 import           Identifier
 import           Prelude hiding ((.), id)

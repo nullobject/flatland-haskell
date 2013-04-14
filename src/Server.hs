@@ -19,7 +19,6 @@ import           Network.HTTP.Types (status200, status400)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.EventSource as Wai.EventSource
 import qualified Network.Wai.Handler.Warp as Warp
-import           World (World)
 import           WorldView (WorldView)
 
 data ServerState = ServerState

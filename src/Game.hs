@@ -6,7 +6,7 @@ import           Control.Concurrent (threadDelay, writeChan, Chan)
 import           Control.Monad.State
 import           Control.Wire
 import           Core
-import           Data.Aeson (encode, ToJSON)
+import           Data.Aeson
 import qualified Data.Maybe as Maybe
 import           Map
 import qualified Network.Wai.EventSource as Wai.EventSource

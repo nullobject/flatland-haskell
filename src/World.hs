@@ -1,12 +1,20 @@
+{-# LANGUAGE TupleSections #-}
+
 module World where
 
+import           Action
 import           Bullet
 import           Collision
 import           Control.Wire hiding (object)
+import qualified Control.Wire as Wire
 import           Core
 import           Data.Aeson
+import qualified Data.Key as Key
 import qualified Data.List as List
+import           Data.Map (Map)
+import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Traversable as Traversable
 import           Entity
 import           Geometry
 import           Identifier
@@ -39,6 +47,11 @@ instance ToJSON World where
 -- A world wire takes a list of messages and produces a new world state.
 type WorldWire = MyWire [Message] World
 
+-- A map from an identifier to a player wire.
+type PlayerWireMap = Map Identifier PlayerWire
+
+type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
+
 -- Returns a new world.
 emptyWorld :: TiledMap -> World
 emptyWorld tiledMap =
@@ -65,6 +78,37 @@ getPlayer identifier world = List.find predicate $ worldPlayers world
 -- Returns the entities in the world.
 worldEntities :: World -> [Entity]
 worldEntities world = Maybe.catMaybes $ map playerEntity $ worldPlayers world
+
+-- Evolves a list of player wires, routing actions which are addressed to them
+-- by matching their identifiers. Actions which are addressed to unknown player
+-- wires are created using the constructor.
+--
+-- TODO: Refactor this function.
+routeWire :: (Identifier -> PlayerWire) -> RouteWire
+routeWire constructor = route Map.empty
+  where
+    route :: PlayerWireMap -> RouteWire
+    route playerWireMap = mkGen $ \dt (objects, messages) -> do
+      -- Create a map from identifiers to actions.
+      let actionMap = Map.fromList messages
+
+      -- Ensure the messages can be delivered to player wires.
+      let playerWireMap' = foldl spawn playerWireMap $ Map.keys actionMap
+
+      -- Step the player wires, supplying the optional actions.
+      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (objects, Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
+
+      -- WTF does this do?
+      let res' = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res
+
+      return (fmap Map.elems (fmap (fmap fst) res'), route (fmap snd res))
+
+    -- Spawns a new player wire if one with the identifier doesn't already exist.
+    spawn :: PlayerWireMap -> Identifier -> PlayerWireMap
+    spawn playerWireMap identifier = Map.alter f identifier playerWireMap
+      where
+        f = Just . maybe wire Wire.id
+        wire = constructor identifier
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
