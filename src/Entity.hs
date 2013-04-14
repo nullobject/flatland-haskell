@@ -26,13 +26,13 @@ instance ToJSON State where
 -- An entity is an actor in the world.
 data Entity = Entity
   { entityId       :: Identifier
-  , entityState    :: State
   , entityAge      :: Age
   , entityPosition :: Position
   , entityVelocity :: Velocity
   , entityRotation :: Angle
   , entityHealth   :: Health
   , entityEnergy   :: Energy
+  , entityState    :: State
   } deriving (Show)
 
 instance ToJSON Entity where
@@ -59,17 +59,17 @@ bulletSpeed = 1
 emptyEntity :: Identifier -> Position -> Entity
 emptyEntity identifier position = Entity
   { entityId       = identifier
-  , entityState    = Entity.Idle
   , entityAge      = 0
   , entityPosition = position
   , entityVelocity = zeroV
   , entityRotation = 0
   , entityHealth   = 100
-  , entityEnergy   = 100 }
+  , entityEnergy   = 100
+  , entityState    = Entity.Idle }
 
 -- If the entity has enough energy to perform the action then it returns the
--- updated energy value and the action. Otherwise it returns the original
--- energy value and forces the idle action.
+-- new energy and the action. Otherwise it returns the original energy value
+-- and forces the idle action.
 energyActionWire :: (Energy, Action) -> MyWire Action (Energy, Action)
 energyActionWire = accum1 update
   where
@@ -105,8 +105,8 @@ impulseWire = execute_ $ return . update
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100000) <|> Wire.empty
 
-stateWire :: MyWire Action State
-stateWire = execute_ $ \action -> return $ case action of
+stateForAction :: Action -> State
+stateForAction action = case action of
   Attack   -> Entity.Attacking
   Forward  -> Entity.Moving
   Reverse  -> Entity.Moving
@@ -135,20 +135,19 @@ entityWire :: Entity -> EntityWire
 entityWire entity = proc (objects, action) -> do
   age'                              <- countFrom age0                       -< 1
   (energy', action')                <- energyActionWire (energy0, action0)  -< action
-  state'                            <- stateWire                            -< action'
   rotation'                         <- rotationWire rotation0               -< action'
   impulse'                          <- impulseWire                          -< (rotation', action')
   (position', velocity', contacts') <- collisionWire (position0, velocity0) -< (objects, impulse')
   health'                           <- healthWire health0                   -< age'
   bullet'                           <- fireBulletWire                       -< (rotation', position', action')
 
-  returnA -< ( Just entity { entityState    = state'
-                           , entityAge      = age'
+  returnA -< ( Just entity { entityAge      = age'
                            , entityPosition = position'
                            , entityVelocity = velocity'
                            , entityRotation = rotation'
                            , entityHealth   = health'
-                           , entityEnergy   = energy' }
+                           , entityEnergy   = energy'
+                           , entityState    = stateForAction action' }
              , bullet' )
 
   where action0   = Action.Idle
