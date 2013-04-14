@@ -175,6 +175,11 @@ function partial(fn) {
           .filter(function(player) { return player != null });
 
       console.log(data);
+
+      document.getElementById("age").innerHTML = data.age;
+      document.getElementById("tile-width").innerHTML = data.tileWidth;
+      document.getElementById("tile-height").innerHTML = data.tileHeight;
+
       updateDebug(data.collisionRectangles, data.tileWidth, data.tileHeight, debugContainer);
       updatePlayfield(data.layers, data.tileWidth, data.tileHeight, playfieldContainer);
       updateEntities(entities, data.tileWidth, data.tileHeight, entitiesContainer);

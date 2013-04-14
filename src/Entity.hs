@@ -68,9 +68,9 @@ emptyEntity identifier position = Entity
   , entityHealth   = 100
   , entityEnergy   = 100 }
 
--- If the entity has enough energy then it returns the updated energy value and
--- the action. Otherwise it returns the original energy value and defaults to
--- the idle action.
+-- If the entity has enough energy to perform the action then it returns the
+-- updated energy value and the action. Otherwise it returns the original
+-- energy value and forces the idle action.
 energyActionWire :: (Energy, Action) -> MyWire Action (Energy, Action)
 energyActionWire = accum1 update
   where
@@ -88,7 +88,7 @@ energyActionWire = accum1 update
 rotationWire :: Angle -> MyWire Action Angle
 rotationWire = accum1 update
   where update rotation (Turn rotation') = rotation'
-        update rotation _                 = rotation
+        update rotation _                = rotation
 
 -- The velocity wire returns the current velocity for the entity. It changes
 -- the velocity when it receives a forward/reverse action.
@@ -96,7 +96,7 @@ impulseWire :: MyWire (Angle, Action) Velocity
 impulseWire = execute_ $ return . update
   where update (rotation, Forward) = vector rotation
         update (rotation, Reverse) = -(vector rotation)
-        update _                    = zeroV
+        update _                   = zeroV
         vector rotation = (cos rotation, sin rotation) ^* entitySpeed
 
 -- The health wire returns the current health of the entity. It inhibits when
