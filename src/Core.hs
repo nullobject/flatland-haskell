@@ -18,7 +18,7 @@ readMaybe s =
     [x] -> Just x
     _   -> Nothing
 
--- Another wire is constructed whenever the given wire wire inhibits.
+-- Constructs another wire whenever the given wire inhibits.
 continually :: MyWire a b -> MyWire a b
 continually wire = switchBy (const wire) wire
 

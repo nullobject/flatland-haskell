@@ -3,9 +3,8 @@
 module Action where
 
 import Data.Aeson
+import Geometry
 import GHC.Generics (Generic)
-
-type Direction = Double
 
 data Action =
     Spawn
@@ -13,7 +12,7 @@ data Action =
   | Attack
   | Forward
   | Reverse
-  | Turn Direction
+  | Turn Angle
   deriving (Eq, Generic, Show)
 
 instance FromJSON Action

@@ -1,7 +1,7 @@
 module Bullet where
 
-import Geometry
 import Data.Aeson
+import Geometry
 
 -- An bullet is an actor in the world.
 data Bullet = Bullet

@@ -1,6 +1,5 @@
 module Geometry where
 
-import Core
 import Data.Aeson
 import Data.AffineSpace
 import Data.VectorSpace
