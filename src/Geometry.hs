@@ -24,7 +24,7 @@ data Rectangle = Rectangle
 
 instance ToJSON Rectangle where
   toJSON rectangle = object [ "position" .= rectanglePosition rectangle
-                            , "extents"  .= rectangleExtents rectangle ]
+                            , "extents"  .= rectangleExtents  rectangle ]
 
 -- Calculates the angle between two points.
 angleBetween :: Point -> Point -> Angle
