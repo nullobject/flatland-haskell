@@ -3,6 +3,7 @@ module WorldView
   , WorldView (..)
   ) where
 
+import Core
 import Data.Aeson
 import Geometry
 import Entity
@@ -14,7 +15,7 @@ import World
 data WorldView = WorldView
   {
     -- The age of the world.
-    worldViewAge :: Int
+    worldViewAge :: Age
 
     -- The player state.
   , worldViewPlayer :: Player
