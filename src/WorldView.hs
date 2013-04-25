@@ -10,10 +10,18 @@ import Player
 import Visibility
 import World
 
+-- Represents a player's current view of the world.
 data WorldView = WorldView
-  { worldViewAge      :: Int
-  , worldViewPlayer   :: Player
+  {
+    -- The age of the world.
+    worldViewAge :: Int
+
+    -- The player state.
+  , worldViewPlayer :: Player
+
+    -- The entities currently visible to the player.
   , worldViewEntities :: [Entity]
+
   } deriving (Show)
 
 instance ToJSON WorldView where
@@ -39,7 +47,7 @@ newWorldView player world = WorldView
 
         visibleEntities = filter (\entity -> entityVisible entity visibility) entities
 
--- Returns true if the entity is in the visibility manifold.
+-- Returns true if the entity lies within the visibility manifold.
 entityVisible :: Entity -> [Triangle] -> Bool
 entityVisible entity visibility = any (intersects position) visibility
   where position = entityPosition entity
