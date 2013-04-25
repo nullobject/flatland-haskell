@@ -21,13 +21,13 @@ data WorldView = WorldView
 
     -- The entities currently visible to the player.
   , worldViewEntities :: [Entity]
-
   } deriving (Show)
 
 instance ToJSON WorldView where
   toJSON worldView = object [ "age"      .= worldViewAge      worldView
                             , "player"   .= worldViewPlayer   worldView
-                            , "entities" .= worldViewEntities worldView ]
+                            , "entities" .= worldViewEntities worldView
+                            ]
 
 -- Returns a new world view for the given player and world.
 newWorldView :: Player -> World -> WorldView

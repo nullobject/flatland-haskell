@@ -11,11 +11,11 @@ type Energy  = Int
 type Message = (Identifier, Action)
 type MyWire  = Wire LastException IO
 
+-- Reads a possible value from string.
 readMaybe :: (Read a) => String -> Maybe a
-readMaybe s =
-  case [x | (x, t) <- reads s, ("", "") <- lex t] of
-    [x] -> Just x
-    _   -> Nothing
+readMaybe s = case [x | (x, t) <- reads s, ("", "") <- lex t] of
+  [x] -> Just x
+  _   -> Nothing
 
 -- Constructs another wire whenever the given wire inhibits.
 continually :: MyWire a b -> MyWire a b

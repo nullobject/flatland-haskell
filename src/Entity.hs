@@ -50,7 +50,6 @@ data Entity = Entity
 
     -- The entity state.
   , entityState :: State
-
   } deriving (Show)
 
 instance ToJSON Entity where
@@ -61,7 +60,8 @@ instance ToJSON Entity where
                          , "rotation" .= entityRotation entity
                          , "health"   .= entityHealth   entity
                          , "energy"   .= entityEnergy   entity
-                         , "state"    .= entityState    entity ]
+                         , "state"    .= entityState    entity
+                         ]
 
 -- An entity wire takes a list of AABBs and an action and produces a new entity
 -- state and a bullet.
@@ -83,7 +83,8 @@ newEntity identifier position = Entity
   , entityRotation = 0
   , entityHealth   = 100
   , entityEnergy   = 100
-  , entityState    = Entity.Idle }
+  , entityState    = Entity.Idle
+  }
 
 -- If the entity has enough energy to perform the intended action then it
 -- returns the new energy and the action. Otherwise it returns the original
@@ -135,10 +136,9 @@ stateForAction action = case action of
 -- The collision wire takes a list of AABBs and an impulse velocity and outputs
 -- the position, velocity, and contacts of the entity.
 collisionWire :: (Position, Velocity) -> MyWire ([AABB], Velocity) (Position, Velocity, [Contact])
-collisionWire (position0, velocity0) =
-  mkPure $ \_ (objects, impulse) ->
-    let (position, velocity, contacts) = collideWithObjects objects position0 impulse
-    in (Right (position, velocity, contacts), collisionWire (position, velocity))
+collisionWire (position0, velocity0) = mkPure $ \_ (objects, impulse) ->
+  let (position, velocity, contacts) = collideWithObjects objects position0 impulse
+  in (Right (position, velocity, contacts), collisionWire (position, velocity))
 
 -- The fire bullet wire spawns a new bullet if the player is attacking. The
 -- bullet is fired from the entity's current position in the direction they are
@@ -169,7 +169,8 @@ entityWire entity = proc (objects, intention) -> do
                             , entityRotation = rotation
                             , entityHealth   = health
                             , entityEnergy   = energy
-                            , entityState    = stateForAction action }
+                            , entityState    = stateForAction action
+                            }
 
   returnA -< (entity', bullet)
 

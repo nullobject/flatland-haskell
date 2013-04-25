@@ -19,8 +19,13 @@ data Triangle = Triangle Point Point Point deriving (Eq, Show)
 
 -- A rectangle is a 4-sided shape.
 data Rectangle = Rectangle
-  { rectanglePosition :: Point
-  , rectangleExtents  :: Extents } deriving (Eq, Show)
+  {
+    -- The position of the bottom-left point of the rectangle.
+    rectanglePosition :: Point
+
+    -- The extents (width & height) of the rectangle.
+  , rectangleExtents  :: Extents
+  } deriving (Eq, Show)
 
 instance ToJSON Rectangle where
   toJSON rectangle = object [ "position" .= rectanglePosition rectangle

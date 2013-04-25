@@ -18,7 +18,7 @@ data Action =
 instance FromJSON Action
 instance ToJSON Action
 
--- Returns the cost of the action.
+-- Returns the cost of the given action.
 cost :: Action -> Int
 cost action = case action of
   Idle    ->  10

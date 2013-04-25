@@ -25,13 +25,15 @@ data Tile = Tile
   , gid      :: Int
   , hFlipped :: Bool
   , vFlipped :: Bool
-  , dFlipped :: Bool } deriving (Generic, Show)
+  , dFlipped :: Bool
+  } deriving (Generic, Show)
 
 instance ToJSON Tile
 
 data Layer = Layer
-  { name :: String
-  , tiles :: [Tile] } deriving (Generic, Show)
+  { name  :: String
+  , tiles :: [Tile]
+  } deriving (Generic, Show)
 
 instance ToJSON Layer
 

@@ -50,7 +50,6 @@ data World = World
 
     -- The world map tile height.
   , worldTileHeight :: Int
-
   } deriving (Show)
 
 instance ToJSON World where
@@ -59,7 +58,8 @@ instance ToJSON World where
                         , "players"             .= worldPlayers             world
                         , "collisionRectangles" .= worldCollisionRectangles world
                         , "tileWidth"           .= worldTileWidth           world
-                        , "tileHeight"          .= worldTileHeight          world ]
+                        , "tileHeight"          .= worldTileHeight          world
+                        ]
 
 -- A world wire takes a list of messages and produces a new world state.
 type WorldWire = MyWire [Message] World
@@ -80,7 +80,8 @@ newWorld tiledMap = World
   , worldCollisionRectangles = collisionRectangles
   , worldSpawnRectangles     = spawnRectangles
   , worldTileWidth           = tileWidth
-  , worldTileHeight          = tileHeight }
+  , worldTileHeight          = tileHeight
+  }
 
   where layers = Map.getTileLayers tiledMap
         collisionRectangles = Map.getCollisionRectangles tiledMap
@@ -131,15 +132,20 @@ ensurePlayerWire playerWireConstructor playerWireMap identifier = Map.alter upda
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
 worldWire world = proc messages -> do
-  age' <- countFrom age0 -< 1
+  -- Increment the age of the world.
+  age <- countFrom age0 -< 1
+
+  -- Step the route wire.
   playerBullets <- wire -< (objects, messages)
 
-  let players' = map fst playerBullets
-  let bullets' = Maybe.catMaybes $ map snd playerBullets
+  let players = map fst playerBullets
+  let bullets = Maybe.catMaybes $ map snd playerBullets
 
-  returnA -< world { worldAge     = age'
-                   , worldPlayers = players'
-                   , worldBullets = bullets' }
+  -- Return the world state.
+  returnA -< world { worldAge     = age
+                   , worldPlayers = players
+                   , worldBullets = bullets
+                   }
 
   where age0 = worldAge world
         objects = map getRectangleAABB $ worldCollisionRectangles world

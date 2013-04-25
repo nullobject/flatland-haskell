@@ -11,4 +11,5 @@ data Bullet = Bullet
 
 instance ToJSON Bullet where
   toJSON bullet = object [ "position" .= bulletPosition bullet
-                         , "velocity" .= bulletVelocity bullet ]
+                         , "velocity" .= bulletVelocity bullet
+                         ]

@@ -35,13 +35,13 @@ data Player = Player
 
     -- The entity controlled by the player.
   , playerEntity :: Maybe Entity
-
   } deriving (Show)
 
 instance ToJSON Player where
   toJSON player = object [ "id"     .= playerId     player
                          , "state"  .= playerState  player
-                         , "entity" .= playerEntity player ]
+                         , "entity" .= playerEntity player
+                         ]
 
 -- A player wire takes an action and produces a player state and a possible
 -- bullet state.
@@ -61,11 +61,9 @@ newPlayer identifier = Player
 -- After 3 seconds, an entity is spawned and the player enters the Alive state.
 playerWire :: [Rectangle] -> Player -> PlayerWire
 playerWire spawnRectangles player = proc (objects, action) -> do
-  (state', (entity', bullet')) <- continually $ entityWire -< (objects, action)
+  (state, (entity, bullet)) <- continually $ entityWire -< (objects, action)
 
-  returnA -< ( player { playerState  = state'
-                      , playerEntity = entity'}
-             , bullet' )
+  returnA -< (player {playerState = state, playerEntity = entity}, bullet)
 
   where entityWire = pure (Dead, (Nothing, Nothing)) . Wire.until (\(objects, action) -> action == Spawn) -->
                      pure (Spawning, (Nothing, Nothing)) . for 3 -->
