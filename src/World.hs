@@ -65,7 +65,7 @@ instance ToJSON World where
 type WorldWire = MyWire [Message] World
 
 -- A route wire routes messages to players.
-type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
+type RouterWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
 
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
@@ -97,21 +97,21 @@ getPlayer identifier world = List.find predicate $ worldPlayers world
 worldEntities :: World -> [Entity]
 worldEntities world = Maybe.catMaybes $ map playerEntity $ worldPlayers world
 
--- Evolves a list of player wires, routing actions which are addressed to them
--- by matching their identifiers. Actions which are addressed to unknown player
--- wires are created using the constructor.
+-- Returns a new router wire given a player wire constructor function.
 --
--- TODO: Refactor this function.
-routeWire :: (Identifier -> PlayerWire) -> RouteWire
-routeWire constructor = route Map.empty
+-- Messages are routed to player wires with matching identifiers. Player wires
+-- with no addressed messages default to the 'Idle' action.
+routerWire :: (Identifier -> PlayerWire) -> RouterWire
+routerWire playerWireConstructor = route Map.empty
   where
-    route :: PlayerWireMap -> RouteWire
+    route :: PlayerWireMap -> RouterWire
     route playerWireMap = mkGen $ \dt (objects, messages) -> do
       -- Create a map from identifiers to actions.
       let actionMap = Map.fromList messages
 
-      -- Ensure the messages can be delivered to player wires.
-      let playerWireMap' = foldl spawn playerWireMap $ Map.keys actionMap
+      -- Create a new player wire if one with the identifier doesn't already
+      -- exist (i.e. A new player joins the world).
+      let playerWireMap' = foldl (ensurePlayerWire playerWireConstructor) playerWireMap $ Map.keys actionMap
 
       -- Step the player wires, supplying the optional actions.
       res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (objects, Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
@@ -121,12 +121,12 @@ routeWire constructor = route Map.empty
 
       return (fmap Map.elems (fmap (fmap fst) res'), route (fmap snd res))
 
-    -- Spawns a new player wire if one with the identifier doesn't already exist.
-    spawn :: PlayerWireMap -> Identifier -> PlayerWireMap
-    spawn playerWireMap identifier = Map.alter f identifier playerWireMap
-      where
-        f = Just . maybe wire Wire.id
-        wire = constructor identifier
+-- Ensures a player wire for the given identifier exists in the map. If not, it
+-- creates one using the player wire constructor function.
+ensurePlayerWire :: (Identifier -> PlayerWire) -> PlayerWireMap -> Identifier -> PlayerWireMap
+ensurePlayerWire playerWireConstructor playerWireMap identifier = Map.alter update identifier playerWireMap
+  where update = Just . maybe wire Wire.id
+        wire = playerWireConstructor identifier
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
@@ -143,4 +143,4 @@ worldWire world = proc messages -> do
 
   where age0 = worldAge world
         objects = map getRectangleAABB $ worldCollisionRectangles world
-        wire = routeWire $ (playerWire $ worldSpawnRectangles world) . newPlayer
+        wire = routerWire $ (playerWire $ worldSpawnRectangles world) . newPlayer
