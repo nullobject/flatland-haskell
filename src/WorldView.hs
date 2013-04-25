@@ -1,5 +1,5 @@
 module WorldView
-  ( forPlayer
+  ( newWorldView
   , WorldView (..)
   ) where
 
@@ -21,13 +21,13 @@ instance ToJSON WorldView where
                             , "player"   .= worldViewPlayer   worldView
                             , "entities" .= worldViewEntities worldView ]
 
--- Returns a new world view for the given player.
-forPlayer :: Player -> World -> WorldView
-forPlayer player world =
-  WorldView { worldViewAge      = age
-            , worldViewPlayer   = player
-            , worldViewEntities = visibleEntities
-            }
+-- Returns a new world view for the given player and world.
+newWorldView :: Player -> World -> WorldView
+newWorldView player world = WorldView
+  { worldViewAge      = age
+  , worldViewPlayer   = player
+  , worldViewEntities = visibleEntities
+  }
 
   where age                 = worldAge                 world
         entities            = worldEntities            world

@@ -56,8 +56,8 @@ bulletSpeed :: Double
 bulletSpeed = 1
 
 -- Returns a new entity.
-emptyEntity :: Identifier -> Position -> Entity
-emptyEntity identifier position = Entity
+newEntity :: Identifier -> Position -> Entity
+newEntity identifier position = Entity
   { entityId       = identifier
   , entityAge      = 0
   , entityPosition = position
@@ -169,5 +169,5 @@ spawnWire spawnRectangles = mkGen $ \dt (objects, action) -> do
   identifier <- Identifier.nextRandom
   spawnRectangle <- pick spawnRectangles
   let position = rectangleCentre spawnRectangle
-  let wire = entityWire $ emptyEntity identifier position
+  let wire = entityWire $ newEntity identifier position
   stepWire wire dt (objects, action)

@@ -23,7 +23,7 @@ respond world = mapM_ respond'
   where
     respond' (Request (identifier, _) sender) = do
       let player = Maybe.fromJust $ getPlayer identifier world
-      let worldView = forPlayer player world
+      let worldView = newWorldView player world
       sender `tell` worldView
 
 -- Runs the main game loop.
@@ -33,7 +33,7 @@ run messageChannel eventChannel = do
   tiledMap <- loadMapFile "static/test.tmx"
 
   -- Create a world wire for the tiled map.
-  let wire = worldWire $ emptyWorld tiledMap
+  let wire = worldWire $ newWorld tiledMap
 
   -- Run the loop.
   loop wire clockSession

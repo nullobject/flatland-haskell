@@ -40,8 +40,8 @@ instance ToJSON Player where
 -- bullet state.
 type PlayerWire = MyWire ([AABB], Action) (Player, Maybe Bullet)
 
-emptyPlayer :: Identifier -> Player
-emptyPlayer identifier = Player
+newPlayer :: Identifier -> Player
+newPlayer identifier = Player
   { playerId     = identifier
   , playerState  = Dead
   , playerEntity = Nothing

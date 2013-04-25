@@ -53,8 +53,8 @@ type PlayerWireMap = Map Identifier PlayerWire
 type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
 
 -- Returns a new world.
-emptyWorld :: TiledMap -> World
-emptyWorld tiledMap =
+newWorld :: TiledMap -> World
+newWorld tiledMap =
   World { worldAge                 = 0
         , worldLayers              = layers
         , worldPlayers             = []
@@ -125,4 +125,4 @@ worldWire world = proc messages -> do
 
   where age0 = worldAge world
         objects = map getRectangleAABB $ worldCollisionRectangles world
-        wire = routeWire $ (playerWire $ worldSpawnRectangles world) . emptyPlayer
+        wire = routeWire $ (playerWire $ worldSpawnRectangles world) . newPlayer
