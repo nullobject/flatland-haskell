@@ -13,6 +13,7 @@ import           Geometry
 import           Identifier
 import           Prelude hiding ((.), id)
 
+-- The entity state.
 data State =
     Idle
   | Attacking
@@ -23,16 +24,33 @@ data State =
 instance ToJSON State where
   toJSON s = toJSON $ map toLower $ show s
 
--- An entity is an actor in the world.
+-- Represents an actor in the world.
 data Entity = Entity
-  { entityId       :: Identifier
-  , entityAge      :: Age
+  {
+    -- The entity identifier.
+    entityId :: Identifier
+
+    -- The age of the entity.
+  , entityAge :: Age
+
+    -- The position of the entity.
   , entityPosition :: Position
+
+    -- The velcity of the entity.
   , entityVelocity :: Velocity
+
+    -- The direction the entity is facting.
   , entityRotation :: Angle
-  , entityHealth   :: Health
-  , entityEnergy   :: Energy
-  , entityState    :: State
+
+    -- The health of the entity (when equal to zero the player is dead).
+  , entityHealth :: Health
+
+    -- The energy the entity has to perform actions.
+  , entityEnergy :: Energy
+
+    -- The entity state.
+  , entityState :: State
+
   } deriving (Show)
 
 instance ToJSON Entity where
