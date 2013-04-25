@@ -2,7 +2,6 @@ module Entity where
 
 import           Action
 import           Bullet
-import           Collision
 import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
@@ -63,9 +62,8 @@ instance ToJSON Entity where
                          , "state"    .= entityState    entity
                          ]
 
--- An entity wire takes a list of AABBs and an action and produces a new entity
--- state and a bullet.
-type EntityWire = MyWire ([AABB], Action) (Maybe Entity, Maybe Bullet)
+-- An entity wire takes an action and produces an entity and maybe a bullet.
+type EntityWire = MyWire Action (Maybe Entity, Maybe Bullet)
 
 entitySpeed :: Double
 entitySpeed = 1
@@ -103,6 +101,20 @@ energyActionWire = accum1 update
                                     then action
                                     else Action.Idle
 
+-- The state wire outputs the current entity state. A 'Tick' message propagates
+-- the previous entity state, any other message will change the entity state.
+stateWire :: State -> MyWire Action State
+stateWire = accum1 update
+  where update state Tick = state
+        update _ action = case action of
+          Attack   -> Entity.Attacking
+          Forward  -> Entity.Moving
+          Reverse  -> Entity.Moving
+          (Turn _) -> Entity.Turning
+          _        -> Entity.Idle
+
+-- The rotation wire outputs the current entity rotation. A 'Turn' message
+-- rotates the entity to the given angle.
 rotationWire :: Angle -> MyWire Action Angle
 rotationWire = accum1 update
   where update _ (Turn rotation) = rotation
@@ -110,11 +122,12 @@ rotationWire = accum1 update
 
 -- The velocity wire returns the current velocity for the entity. It changes
 -- the velocity when it receives a forward/reverse action.
-impulseWire :: MyWire (Angle, Action) Velocity
-impulseWire = execute_ $ return . update
-  where update (rotation, Forward) = vector rotation
-        update (rotation, Reverse) = -(vector rotation)
-        update _                   = zeroV
+velocityWire :: Velocity -> MyWire (Angle, Action) Velocity
+velocityWire = accum1 update
+  where update _ (rotation, Forward) = vector rotation
+        update _ (rotation, Reverse) = -(vector rotation)
+        update velocity (_, Tick)    = velocity
+        update _ _                   = zeroV
         vector rotation = (cos rotation, sin rotation) ^* entitySpeed
 
 -- The health wire returns the current health of the entity. It inhibits when
@@ -124,44 +137,30 @@ impulseWire = execute_ $ return . update
 healthWire :: Health -> MyWire Age Health
 healthWire health0 = pure health0 . when (< 100000) <|> Wire.empty
 
--- Returns the entity state for the given action.
-stateForAction :: Action -> State
-stateForAction action = case action of
-  Attack   -> Entity.Attacking
-  Forward  -> Entity.Moving
-  Reverse  -> Entity.Moving
-  (Turn _) -> Entity.Turning
-  _        -> Entity.Idle
-
--- The collision wire takes a list of AABBs and an impulse velocity and outputs
--- the position, velocity, and contacts of the entity.
-collisionWire :: (Position, Velocity) -> MyWire ([AABB], Velocity) (Position, Velocity, [Contact])
-collisionWire (position0, velocity0) = mkPure $ \_ (objects, impulse) ->
-  let (position, velocity, contacts) = collideWithObjects objects position0 impulse
-  in (Right (position, velocity, contacts), collisionWire (position, velocity))
-
 -- The fire bullet wire spawns a new bullet if the player is attacking. The
 -- bullet is fired from the entity's current position in the direction they are
 -- facing.
 fireBulletWire :: MyWire (Angle, Position, Action) (Maybe Bullet)
 fireBulletWire = execute_ $ return . update
   where update (rotation, position, Attack) = Just Bullet { bulletPosition = position
-                                                          , bulletVelocity = vector rotation }
+                                                          , bulletVelocity = velocity rotation
+                                                          }
         update _ = Nothing
 
-        vector rotation = (cos rotation, sin rotation) ^* bulletSpeed
+        velocity rotation = (cos rotation, sin rotation) ^* bulletSpeed
 
 
 -- Returns a new entity wire given an initial entity state.
 entityWire :: Entity -> EntityWire
-entityWire entity = proc (objects, intention) -> do
-  age                            <- countFrom age0                       -< 1
-  (energy, action)               <- energyActionWire (energy0, action0)  -< intention
-  rotation                       <- rotationWire rotation0               -< action
-  impulse                        <- impulseWire                          -< (rotation, action)
-  (position, velocity, contacts) <- collisionWire (position0, velocity0) -< (objects, impulse)
+entityWire entity = proc action -> do
+  age                            <- timeFrom age0                        -< ()
+  (energy, action')              <- energyActionWire (energy0, action0)  -< action
+  state                          <- stateWire state0                     -< action'
+  rotation                       <- rotationWire rotation0               -< action'
+  velocity                       <- velocityWire velocity0               -< (rotation, action')
+  position                       <- integral1_ position0                 -< velocity
   health                         <- healthWire health0                   -< age
-  bullet                         <- fireBulletWire                       -< (rotation, position, action)
+  bullet                         <- fireBulletWire                       -< (rotation, position, action')
 
   let entity' = Just entity { entityAge      = age
                             , entityPosition = position
@@ -169,7 +168,7 @@ entityWire entity = proc (objects, intention) -> do
                             , entityRotation = rotation
                             , entityHealth   = health
                             , entityEnergy   = energy
-                            , entityState    = stateForAction action
+                            , entityState    = state
                             }
 
   returnA -< (entity', bullet)
@@ -179,14 +178,15 @@ entityWire entity = proc (objects, intention) -> do
         energy0   = entityEnergy   entity
         health0   = entityHealth   entity
         position0 = entityPosition entity
-        velocity0 = entityVelocity entity
         rotation0 = entityRotation entity
+        state0    = entityState    entity
+        velocity0 = entityVelocity entity
 
 -- Spawns a new entity.
 spawnWire :: [Rectangle] -> EntityWire
-spawnWire spawnRectangles = mkGen $ \dt (objects, action) -> do
+spawnWire spawnRectangles = mkGen $ \dt action -> do
   identifier <- Identifier.nextRandom
   spawnRectangle <- pick spawnRectangles
   let position = rectangleCentre spawnRectangle
   let wire = entityWire $ newEntity identifier position
-  stepWire wire dt (objects, action)
+  stepWire wire dt action

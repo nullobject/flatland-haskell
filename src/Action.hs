@@ -7,7 +7,8 @@ import Geometry
 import GHC.Generics (Generic)
 
 data Action =
-    Spawn
+    Tick
+  | Spawn
   | Idle
   | Attack
   | Forward

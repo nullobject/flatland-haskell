@@ -2,7 +2,6 @@ module Player where
 
 import           Action
 import           Bullet
-import           Collision (AABB)
 import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
@@ -43,9 +42,8 @@ instance ToJSON Player where
                          , "entity" .= playerEntity player
                          ]
 
--- A player wire takes an action and produces a player state and a possible
--- bullet state.
-type PlayerWire = MyWire ([AABB], Action) (Player, Maybe Bullet)
+-- A player wire takes an action and produces a player and maybe a bullet.
+type PlayerWire = MyWire Action (Player, Maybe Bullet)
 
 -- Returns a new player with the given identifier.
 newPlayer :: Identifier -> Player
@@ -60,11 +58,11 @@ newPlayer identifier = Player
 -- When a 'spawn' message is received the player enters the Spawning state.
 -- After 3 seconds, an entity is spawned and the player enters the Alive state.
 playerWire :: [Rectangle] -> Player -> PlayerWire
-playerWire spawnRectangles player = proc (objects, action) -> do
-  (state, (entity, bullet)) <- continually $ entityWire -< (objects, action)
+playerWire spawnRectangles player = proc action -> do
+  (state, (entity, bullet)) <- continually $ entityWire -< action
 
   returnA -< (player {playerState = state, playerEntity = entity}, bullet)
 
-  where entityWire = pure (Dead, (Nothing, Nothing)) . Wire.until (\(objects, action) -> action == Spawn) -->
+  where entityWire = pure (Dead, (Nothing, Nothing)) . Wire.until (== Spawn) -->
                      pure (Spawning, (Nothing, Nothing)) . for 3 -->
                      pure Alive &&& Entity.spawnWire spawnRectangles

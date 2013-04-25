@@ -1,5 +1,6 @@
 module Game where
 
+import           Action
 import           Blaze.ByteString.Builder.ByteString (fromLazyByteString)
 import           Channel
 import           Control.Concurrent (threadDelay, writeChan, Chan)
@@ -10,6 +11,7 @@ import           Data.Aeson
 import qualified Data.Maybe as Maybe
 import           Map
 import qualified Network.Wai.EventSource as Wai.EventSource
+import           Player
 import           Prelude hiding ((.), id)
 import           World
 import           WorldView
@@ -36,26 +38,40 @@ run messageChannel eventChannel = do
   let wire = worldWire $ newWorld tiledMap
 
   -- Run the loop.
-  loop wire clockSession
+  loop wire $ counterSession 1
 
   where
+    loop :: WorldWire -> Session IO -> IO ()
     loop wire session = do
-      -- Sleep for a second.
-      threadDelay oneSecond
-
       -- Get the pending messages.
       requests <- drain messageChannel
       let messages = map Channel.payload requests
 
-      -- Step the world wire.
-      (output, wire', session') <- stepSession wire session messages
+      -- Step the world wire with any pending messages.
+      (output, wire') <- stepWire wire 0 messages
 
       case output of
         -- TODO: handle the case where the world wire inhibits.
         Left x -> putStrLn $ "Inhibited: " ++ show x
 
         Right world -> do
-          putStrLn $ "Produced: " ++ show world
-          respond world requests
-          _ <- liftIO $ writeChan eventChannel (Wai.EventSource.ServerEvent Nothing Nothing [fromLazyByteString $ encode world])
-          loop wire' session'
+          -- Collide moving objects and calculate contacts.
+          -- TODO
+
+          -- Sleep for a second.
+          threadDelay oneSecond
+
+          -- Step the world wire with the tick message (and any contacts).
+          let playerIds = map playerId $ worldPlayers world
+          let messages' = zip playerIds $ repeat Tick
+          (output', wire'', session') <- stepSession wire' session messages'
+
+          case output' of
+            -- TODO: handle the case where the world wire inhibits.
+            Left x -> putStrLn $ "Inhibited: " ++ show x
+
+            Right world -> do
+              putStrLn $ "Produced: " ++ show world
+              respond world requests
+              _ <- liftIO $ writeChan eventChannel (Wai.EventSource.ServerEvent Nothing Nothing [fromLazyByteString $ encode world])
+              loop wire'' session'

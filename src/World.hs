@@ -4,7 +4,6 @@ module World where
 
 import           Action
 import           Bullet
-import           Collision
 import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
@@ -65,7 +64,7 @@ instance ToJSON World where
 type WorldWire = MyWire [Message] World
 
 -- A route wire routes messages to players.
-type RouterWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
+type RouterWire = MyWire [Message] [(Player, Maybe Bullet)]
 
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
@@ -106,7 +105,7 @@ routerWire :: (Identifier -> PlayerWire) -> RouterWire
 routerWire playerWireConstructor = route Map.empty
   where
     route :: PlayerWireMap -> RouterWire
-    route playerWireMap = mkGen $ \dt (objects, messages) -> do
+    route playerWireMap = mkGen $ \dt messages -> do
       -- Create a map from identifiers to actions.
       let actionMap = Map.fromList messages
 
@@ -115,7 +114,7 @@ routerWire playerWireConstructor = route Map.empty
       let playerWireMap' = foldl (ensurePlayerWire playerWireConstructor) playerWireMap $ Map.keys actionMap
 
       -- Step the player wires, supplying the optional actions.
-      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (objects, Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
+      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
 
       -- WTF does this do?
       let res' = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res
@@ -133,10 +132,10 @@ ensurePlayerWire playerWireConstructor playerWireMap identifier = Map.alter upda
 worldWire :: World -> WorldWire
 worldWire world = proc messages -> do
   -- Increment the age of the world.
-  age <- countFrom age0 -< 1
+  age <- timeFrom age0 -< ()
 
   -- Step the route wire.
-  playerBullets <- wire -< (objects, messages)
+  playerBullets <- wire -< messages
 
   let players = map fst playerBullets
   let bullets = Maybe.catMaybes $ map snd playerBullets
@@ -148,5 +147,4 @@ worldWire world = proc messages -> do
                    }
 
   where age0 = worldAge world
-        objects = map getRectangleAABB $ worldCollisionRectangles world
         wire = routerWire $ (playerWire $ worldSpawnRectangles world) . newPlayer

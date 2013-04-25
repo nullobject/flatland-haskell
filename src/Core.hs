@@ -5,7 +5,7 @@ import Control.Wire
 import Identifier (Identifier)
 import Prelude hiding ((.), id)
 
-type Age     = Int
+type Age     = Double
 type Health  = Int
 type Energy  = Int
 type Message = (Identifier, Action)
