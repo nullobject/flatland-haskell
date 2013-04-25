@@ -14,6 +14,7 @@ import           Geometry
 import           Identifier
 import           Prelude hiding ((.), id)
 
+-- The player state.
 data State =
     Dead
   | Spawning
@@ -23,12 +24,18 @@ data State =
 instance ToJSON State where
   toJSON s = toJSON $ map toLower $ show s
 
--- | A player represents the state of a player in the game. A player controls
--- an entity in the world.
+-- Represents the state of a player in the game.
 data Player = Player
-  { playerId     :: Identifier
-  , playerState  :: State
+  {
+    -- The player identifier.
+    playerId :: Identifier
+
+    -- The player state.
+  , playerState :: State
+
+    -- The entity controlled by the player.
   , playerEntity :: Maybe Entity
+
   } deriving (Show)
 
 instance ToJSON Player where
@@ -40,6 +47,7 @@ instance ToJSON Player where
 -- bullet state.
 type PlayerWire = MyWire ([AABB], Action) (Player, Maybe Bullet)
 
+-- Returns a new player with the given identifier.
 newPlayer :: Identifier -> Player
 newPlayer identifier = Player
   { playerId     = identifier
