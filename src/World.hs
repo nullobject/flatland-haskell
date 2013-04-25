@@ -24,16 +24,33 @@ import           Prelude hiding ((.), id)
 
 type Size = Int
 
--- A world contains a list of players.
+-- Represents the state of the world.
 data World = World
-  { worldAge                 :: Age
-  , worldLayers              :: [Layer]
-  , worldPlayers             :: [Player]
-  , worldBullets             :: [Bullet]
+  {
+    -- The age of the world.
+    worldAge :: Age
+
+    -- The layers in the world map.
+  , worldLayers :: [Layer]
+
+    -- The players in the world.
+  , worldPlayers :: [Player]
+
+    -- The bullets flying around.
+  , worldBullets :: [Bullet]
+
+    -- The collision geometry.
   , worldCollisionRectangles :: [Rectangle]
-  , worldSpawnRectangles     :: [Rectangle]
-  , worldTileWidth           :: Int
-  , worldTileHeight          :: Int
+
+    -- The locations a player can spawn from.
+  , worldSpawnRectangles :: [Rectangle]
+
+    -- The world map tile width.
+  , worldTileWidth :: Int
+
+    -- The world map tile height.
+  , worldTileHeight :: Int
+
   } deriving (Show)
 
 instance ToJSON World where
@@ -47,22 +64,23 @@ instance ToJSON World where
 -- A world wire takes a list of messages and produces a new world state.
 type WorldWire = MyWire [Message] World
 
+-- A route wire routes messages to players.
+type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
+
 -- A map from an identifier to a player wire.
 type PlayerWireMap = Map Identifier PlayerWire
 
-type RouteWire = MyWire ([AABB], [Message]) [(Player, Maybe Bullet)]
-
 -- Returns a new world.
 newWorld :: TiledMap -> World
-newWorld tiledMap =
-  World { worldAge                 = 0
-        , worldLayers              = layers
-        , worldPlayers             = []
-        , worldBullets             = []
-        , worldCollisionRectangles = collisionRectangles
-        , worldSpawnRectangles     = spawnRectangles
-        , worldTileWidth           = tileWidth
-        , worldTileHeight          = tileHeight }
+newWorld tiledMap = World
+  { worldAge                 = 0
+  , worldLayers              = layers
+  , worldPlayers             = []
+  , worldBullets             = []
+  , worldCollisionRectangles = collisionRectangles
+  , worldSpawnRectangles     = spawnRectangles
+  , worldTileWidth           = tileWidth
+  , worldTileHeight          = tileHeight }
 
   where layers = Map.getTileLayers tiledMap
         collisionRectangles = Map.getCollisionRectangles tiledMap
