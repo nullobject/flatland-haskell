@@ -26,22 +26,36 @@ respond world = mapM_ respond'
       let worldView = forPlayer player world
       sender `tell` worldView
 
--- TODO: handle the case where the world wire inhibits.
+-- Runs the main game loop.
 run :: Channel Message WorldView -> Chan Wai.EventSource.ServerEvent -> IO ()
 run messageChannel eventChannel = do
+  -- Load the tiled map.
   tiledMap <- loadMapFile "static/test.tmx"
+
+  -- Create a world wire for the tiled map.
   let wire = worldWire $ emptyWorld tiledMap
-  run' wire clockSession
+
+  -- Run the loop.
+  loop wire clockSession
+
   where
-    run' wire session = do
+    loop wire session = do
+      -- Sleep for a second.
       threadDelay oneSecond
+
+      -- Get the pending messages.
       requests <- drain messageChannel
       let messages = map Channel.payload requests
+
+      -- Step the world wire.
       (output, wire', session') <- stepSession wire session messages
+
       case output of
+        -- TODO: handle the case where the world wire inhibits.
         Left x -> putStrLn $ "Inhibited: " ++ show x
+
         Right world -> do
           putStrLn $ "Produced: " ++ show world
           respond world requests
           _ <- liftIO $ writeChan eventChannel (Wai.EventSource.ServerEvent Nothing Nothing [fromLazyByteString $ encode world])
-          run' wire' session'
+          loop wire' session'
