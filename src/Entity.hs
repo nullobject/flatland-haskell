@@ -120,8 +120,8 @@ rotationWire = accum1 update
   where update _ (Turn rotation) = rotation
         update rotation _        = rotation
 
--- The velocity wire returns the current velocity for the entity. It changes
--- the velocity when it receives a forward/reverse action.
+-- The velocity wire outputs the current entity velocity. It applies an impulse
+-- when it receives a 'Forward' or 'Reverse' action.
 velocityWire :: Velocity -> MyWire (Angle, Action) Velocity
 velocityWire = accum1 update
   where update _ (rotation, Forward) = vector rotation
