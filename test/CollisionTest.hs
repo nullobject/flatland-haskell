@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module CollisionTest where
 
 import Test.Framework (buildTest, defaultMain, testGroup)
@@ -6,22 +8,52 @@ import Test.HUnit
 
 import Collision
 
+class Approx a where
+  (~=) :: a -> a -> Bool
+
+instance Approx Double where
+  x ~= y = abs (x - y) < 1.0e-4
+
+instance Approx (Double, Double) where
+  (a0, a1) ~= (b0, b1) = a0 ~= b0 && a1 ~= b1
+
+(@?~=) :: (Show a, Approx a) => a -> a -> Assertion
+(@?~=) actual expected = expected ~= actual @? message
+  where message = "expected: " ++ show expected ++ "\n but got: " ++ show actual
+
+(@~=?) :: (Show a, Approx a) => a -> a -> Assertion
+(@~=?) expected actual = expected ~= actual @? message
+  where message = "expected: " ++ show expected ++ "\n but got: " ++ show actual
+
 main = defaultMain tests
 
-tests = [testCalculateCollisions, testIntersectAABB]
+tests = [testRunPhysics, testCalculateCollision, testIntersectAABB]
 
-testCalculateCollisions = testGroup "calculateCollisions"
-  [ testCase "test1"  test1
-  , testCase "test2"  test2
-  , testCase "test3"  test3
-  , testCase "test4"  test4
-  , testCase "test5"  test5
-  , testCase "test6"  test6
-  , testCase "test7"  test7
-  , testCase "test8"  test8
-  , testCase "test9"  test9
-  , testCase "test10" test10
-  , testCase "test11" test11 ]
+testRunPhysics = testGroup "runPhysics"
+  [ testCase "test1" test1
+  , testCase "test2" test2
+  , testCase "test3" test3
+  , testCase "test4" test4
+  ]
+
+  where a = Body (2, 0) (0.5, 0.5) ( 1, 0) 0 1.5
+        b = Body (4, 0) (0.5, 0.5) (-1, 0) 0 0.5
+
+        result = runPhysics [a, b] 1
+
+        test1 = bodyPosition (head result) @?~= ( 1.5, 0.0)
+        test2 = bodyPosition (last result) @?~= ( 3.5, 0.0)
+        test3 = bodyVelocity (head result) @?~= (-2.0, 0.0)
+        test4 = bodyVelocity (last result) @?~= ( 0.0, 0.0)
+
+testCalculateCollision = testGroup "calculateCollision"
+  [ testCase "test1" test1
+  , testCase "test2" test2
+  , testCase "test3" test3
+  , testCase "test4" test4
+  , testCase "test5" test5
+  , testCase "test6" test6
+  , testCase "test7" test7 ]
 
   where a = AABB (1, 0) (0.5, 0.5)
         b = AABB (2, 0) (0.5, 0.5)
@@ -29,37 +61,25 @@ testCalculateCollisions = testGroup "calculateCollisions"
         d = AABB (4, 4) (0.5, 0.5)
 
         -- Initially overlapping.
-        test1 = calculateCollisions a b (1, 0) (0, 0) @?= Just (Contact 0 0)
+        test1 = calculateCollision a b (1, 0) (0, 0) @?= Just (0, 0)
 
         -- Not moving.
-        test2 = calculateCollisions b c (0, 0) (0, 0) @?= Nothing
+        test2 = calculateCollision b c (0, 0) (0, 0) @?= Nothing
 
         -- Not moving fast enough.
-        test3 = calculateCollisions b c (0.5, 0) (0, 0) @?= Nothing
+        test3 = calculateCollision b c (0.25, 0) (-0.25, 0) @?= Nothing
 
         -- Moving in the opposite direction.
-        test4 = calculateCollisions b c (-2, 0) (0, 0) @?= Nothing
+        test4 = calculateCollision b c (-2, 0) (0, 0) @?= Nothing
 
-        -- Contact at half of the way.
-        test5 = calculateCollisions b c (2, 0) (0, 0) @?= Just (Contact 0.5 1)
+        -- Collision at half of the way.
+        test5 = calculateCollision b c (1, 0) (-1, 0) @?= Just (0.5, 1)
 
-        -- Contact at quarter of the way.
-        test6 = calculateCollisions b c (4, 0) (0, 0) @?= Just (Contact 0.25 0.75)
-
-        -- Not moving fast enough.
-        test7 = calculateCollisions a c (0, 0) (-0.5, 0) @?= Nothing
-
-        -- Moving in the opposite direction.
-        test8 = calculateCollisions a c (0, 0) (4, 0) @?= Nothing
-
-        -- Contact at half of the way.
-        test9 = calculateCollisions a c (0, 0) (-4, 0) @?= Just (Contact 0.5 1)
-
-        -- Contact at quarter of the way.
-        test10 = calculateCollisions a c (0, 0) (-8, 0) @?= Just (Contact 0.25 0.5)
+        -- Collision at quarter of the way.
+        test6 = calculateCollision b c (2, 0) (-2, 0) @?= Just (0.25, 0.75)
 
         -- Not in path.
-        test11 = calculateCollisions b d (1, 2) (0, 0) @?= Nothing
+        test7 = calculateCollision b d (1, 2) (0, 0) @?= Nothing
 
 testIntersectAABB = testGroup "intersectAABB"
   [ testCase "test1" test1
