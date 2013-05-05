@@ -38,7 +38,7 @@ data Entity = Entity
     -- The velcity of the entity.
   , entityVelocity :: Velocity
 
-    -- The direction the entity is facting.
+    -- The direction the entity is facing.
   , entityRotation :: Angle
 
     -- The health of the entity (when equal to zero the player is dead).
