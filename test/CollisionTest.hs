@@ -1,29 +1,11 @@
-{-# LANGUAGE FlexibleInstances #-}
-
 module CollisionTest where
 
+import Approx
 import Test.Framework (buildTest, defaultMain, testGroup)
 import Test.Framework.Providers.HUnit
 import Test.HUnit
 
 import Collision
-
-class Approx a where
-  (~=) :: a -> a -> Bool
-
-instance Approx Double where
-  x ~= y = abs (x - y) < 1.0e-4
-
-instance Approx (Double, Double) where
-  (a0, a1) ~= (b0, b1) = a0 ~= b0 && a1 ~= b1
-
-(@?~=) :: (Show a, Approx a) => a -> a -> Assertion
-(@?~=) actual expected = expected ~= actual @? message
-  where message = "expected: " ++ show expected ++ "\n but got: " ++ show actual
-
-(@~=?) :: (Show a, Approx a) => a -> a -> Assertion
-(@~=?) expected actual = expected ~= actual @? message
-  where message = "expected: " ++ show expected ++ "\n but got: " ++ show actual
 
 main = defaultMain tests
 
