@@ -2,7 +2,7 @@ module Core where
 
 import Action
 import Control.Wire
-import Identifier (Identifier)
+import Identifier
 import Prelude hiding ((.), id)
 
 type Age     = Double
