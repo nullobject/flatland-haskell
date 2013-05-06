@@ -2,6 +2,7 @@ module Entity where
 
 import           Action
 import           Bullet
+import           Collision
 import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
@@ -32,14 +33,8 @@ data Entity = Entity
     -- The age of the entity.
   , entityAge :: Age
 
-    -- The position of the entity.
-  , entityPosition :: Position
-
-    -- The velcity of the entity.
-  , entityVelocity :: Velocity
-
-    -- The direction the entity is facing.
-  , entityRotation :: Angle
+    -- The moving body of the entity.
+  , entityBody :: Body
 
     -- The health of the entity (when equal to zero the player is dead).
   , entityHealth :: Health
@@ -68,21 +63,29 @@ type EntityWire = MyWire Action (Maybe Entity, Maybe Bullet)
 entitySpeed :: Double
 entitySpeed = 1
 
+entityPosition :: Entity -> Position
+entityPosition entity = bodyPosition $ entityBody entity
+
+entityVelocity :: Entity -> Velocity
+entityVelocity entity = bodyVelocity $ entityBody entity
+
+entityRotation :: Entity -> Angle
+entityRotation entity = bodyRotation $ entityBody entity
+
 bulletSpeed :: Double
 bulletSpeed = 1
 
 -- Returns a new entity.
 newEntity :: Identifier -> Position -> Entity
 newEntity identifier position = Entity
-  { entityId       = identifier
-  , entityAge      = 0
-  , entityPosition = position
-  , entityVelocity = zeroV
-  , entityRotation = 0
-  , entityHealth   = 100
-  , entityEnergy   = 100
-  , entityState    = Entity.Idle
+  { entityId     = identifier
+  , entityAge    = 0
+  , entityBody   = body
+  , entityHealth = 100
+  , entityEnergy = 100
+  , entityState  = Entity.Idle
   }
+  where body = newBody {bodyPosition = position}
 
 -- If the entity has enough energy to perform the intended action then it
 -- returns the new energy and the action. Otherwise it returns the original
@@ -162,10 +165,13 @@ entityWire entity = proc action -> do
   health                         <- healthWire health0                   -< age
   bullet                         <- fireBulletWire                       -< (rotation, position, action')
 
+  let body = body0 { bodyPosition = position
+                   , bodyVelocity = velocity
+                   , bodyRotation = rotation
+                   }
+
   let entity' = Just entity { entityAge      = age
-                            , entityPosition = position
-                            , entityVelocity = velocity
-                            , entityRotation = rotation
+                            , entityBody     = body
                             , entityHealth   = health
                             , entityEnergy   = energy
                             , entityState    = state
@@ -175,6 +181,7 @@ entityWire entity = proc action -> do
 
   where action0   = Action.Idle
         age0      = entityAge      entity
+        body0     = entityBody     entity
         energy0   = entityEnergy   entity
         health0   = entityHealth   entity
         position0 = entityPosition entity

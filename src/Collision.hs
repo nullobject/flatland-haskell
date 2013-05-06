@@ -1,7 +1,8 @@
 module Collision
   ( calculateCollision
-  , intersectAABB
   , getRectangleAABB
+  , intersectAABB
+  , newBody
   , runPhysics
   , AABB (..)
   , Body (..)
@@ -24,9 +25,6 @@ data Body = Body
     -- The position of the body.
     bodyPosition :: Position
 
-    -- The extents of the body.
-  , bodyExtents :: Extents
-
     -- The velocity of the body.
   , bodyVelocity :: Velocity
 
@@ -35,6 +33,9 @@ data Body = Body
 
     -- The inverse mass of the body.
   , bodyInverseMass :: Double
+
+    -- The extents of the body.
+  , bodyExtents :: Extents
   } deriving (Eq, Show)
 
 -- Represents a collision between two bodies.
@@ -65,6 +66,14 @@ pairs xs = [(a, b) | (a:as) <- init . tails $ xs, b <- as]
 
 -- Returns a list of 2-combinations with repetition.
 pairs_ xs = [(a, b) | as@(a:_) <- init . tails $ xs, b <- as]
+
+newBody :: Body
+newBody = Body { bodyPosition    = zeroV
+               , bodyVelocity    = zeroV
+               , bodyRotation    = 0.0
+               , bodyInverseMass = 1.0
+               , bodyExtents     = (0.5, 0.5)
+               }
 
 -- Returns the bodies in the collision as a list.
 collisionBodies_ :: Collision -> [Body]
