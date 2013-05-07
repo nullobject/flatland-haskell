@@ -5,6 +5,7 @@ module WorldView
 
 import Core
 import Data.Aeson
+import Data.Maybe
 import Geometry
 import Entity
 import Player
@@ -32,23 +33,28 @@ instance ToJSON WorldView where
 
 -- Returns a new world view for the given player and world.
 newWorldView :: Player -> World -> WorldView
-newWorldView player world = WorldView
-  { worldViewAge      = age
-  , worldViewPlayer   = player
-  , worldViewEntities = visibleEntities
-  }
+newWorldView player world = WorldView { worldViewAge      = age
+                                      , worldViewPlayer   = player
+                                      , worldViewEntities = entities
+                                      }
 
-  where age                 = worldAge                 world
-        entities            = worldEntities            world
+  where age = worldAge world
+        mesh = playerVisibilityMesh player world
+        entities = filter predicate $ worldEntities world
+        predicate entity = intersectMesh (entityPosition entity) mesh
+
+-- Returns the visibility mesh for the given player and world.
+playerVisibilityMesh :: Player -> World -> Mesh
+playerVisibilityMesh player world
+  -- If the player has not spawned, then they can't see anything.
+  | isNothing entity = []
+
+  -- Otherwise, calculate the mesh visible to the entity.
+  | otherwise = calculateVisibilityMesh position collisionRectangles
+
+  where entity = case playerEntityId player of
+                 Just id -> entityWithId id world
+                 Nothing -> Nothing
+
+        position = entityPosition . fromJust $ entity
         collisionRectangles = worldCollisionRectangles world
-
-        visibility = case playerEntity player of
-                     Just entity -> calculateVisibility (entityPosition entity) collisionRectangles
-                     Nothing     -> []
-
-        visibleEntities = filter (\entity -> entityVisible entity visibility) entities
-
--- Returns true if the entity lies within the visibility manifold.
-entityVisible :: Entity -> [Triangle] -> Bool
-entityVisible entity visibility = any (intersects position) visibility
-  where position = entityPosition entity

@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Collision
   ( calculateCollision
   , getRectangleAABB
@@ -9,10 +11,13 @@ module Collision
   , Collision (..)
   ) where
 
+import Data.Aeson
 import Data.List
 import Data.Maybe
 import Data.VectorSpace
 import Geometry
+import GHC.Generics (Generic)
+import Identifier
 
 type Time = Double
 
@@ -22,8 +27,11 @@ data AABB = AABB Point Extents deriving (Eq, Show)
 -- Represents a rigid body.
 data Body = Body
   {
+    -- The unique identifier of the body.
+    bodyId :: Identifier
+
     -- The position of the body.
-    bodyPosition :: Position
+  , bodyPosition :: Position
 
     -- The velocity of the body.
   , bodyVelocity :: Velocity
@@ -36,7 +44,10 @@ data Body = Body
 
     -- The extents of the body.
   , bodyExtents :: Extents
-  } deriving (Eq, Show)
+  } deriving (Eq, Generic, Show)
+
+instance FromJSON Body
+instance ToJSON Body
 
 -- Represents a collision between two bodies.
 data Collision = Collision
@@ -67,13 +78,14 @@ pairs xs = [(a, b) | (a:as) <- init . tails $ xs, b <- as]
 -- Returns a list of 2-combinations with repetition.
 pairs_ xs = [(a, b) | as@(a:_) <- init . tails $ xs, b <- as]
 
-newBody :: Body
-newBody = Body { bodyPosition    = zeroV
-               , bodyVelocity    = zeroV
-               , bodyRotation    = 0.0
-               , bodyInverseMass = 1.0
-               , bodyExtents     = (0.5, 0.5)
-               }
+newBody :: Identifier -> Body
+newBody identifier = Body { bodyId          = identifier
+                          , bodyPosition    = zeroV
+                          , bodyVelocity    = zeroV
+                          , bodyRotation    = 0
+                          , bodyInverseMass = 1
+                          , bodyExtents     = (0.5, 0.5)
+                          }
 
 -- Returns the bodies in the collision as a list.
 collisionBodies_ :: Collision -> [Body]

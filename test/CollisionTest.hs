@@ -18,8 +18,17 @@ testRunPhysics = testGroup "runPhysics"
   , testCase "test4" test4
   ]
 
-  where a = Body (2, 0) (0.5, 0.5) ( 1, 0) 0 1.5
-        b = Body (4, 0) (0.5, 0.5) (-1, 0) 0 0.5
+  where a = (newBody $ read "5108b670-3332-4172-862d-89bf68576ed6")
+          { bodyPosition    = (2, 0)
+          , bodyVelocity    = (1, 0)
+          , bodyInverseMass = 1.5
+          }
+
+        b = (newBody $ read "6b0283ac-01ca-418a-a775-d6bdb8ae465a")
+          { bodyPosition    = (4, 0)
+          , bodyVelocity    = (-1, 0)
+          , bodyInverseMass = 0.5
+          }
 
         result = runPhysics [a, b] 1
 

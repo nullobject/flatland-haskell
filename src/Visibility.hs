@@ -1,12 +1,12 @@
 module Visibility
   ( calculateEndpoints
-  , calculateVisibility
+  , calculateVisibilityMesh
   , Endpoint (..)
   ) where
 
-import qualified Data.List as List
-import           Data.VectorSpace
-import           Geometry
+import Data.List
+import Data.VectorSpace
+import Geometry
 
 -- An endpoint to be processed by the visibility algorithm.
 data Endpoint = Endpoint Point Segment Angle Bool deriving (Eq, Show)
@@ -25,8 +25,8 @@ instance Ord Endpoint where
 -- The algorithm casts rays from the origin to the vertices in each rectangle,
 -- calculating the triangles subtended by the rays intersecting with the
 -- nearest edge.
-calculateVisibility :: Point -> [Rectangle] -> [Triangle]
-calculateVisibility origin rectangles = calculateTriangles origin endpoints
+calculateVisibilityMesh :: Point -> [Rectangle] -> Mesh
+calculateVisibilityMesh origin rectangles = calculateMesh origin endpoints
   where endpoints = concatMap (calculateEndpoints origin) segments
         segments = concatMap rectangleSegments rectangles
 
@@ -40,14 +40,15 @@ calculateEndpoints origin segment@(Segment a b) =
         begin1 = angleDifference angle1 angle2 > 0
         begin2 = not begin1
 
--- Calculates a list of triangles from a list of endpoints. The algorithm makes
--- two passes over the list of endpoints and snaps each of the resulting
--- triangles.
-calculateTriangles :: Point -> [Endpoint] -> [Triangle]
-calculateTriangles origin endpoints = map snapTriangle triangles
+-- Calculates a list of triangles from a list of endpoints.
+--
+-- The algorithm makes two passes over the list of endpoints and snaps each of
+-- the resulting triangles.
+calculateMesh :: Point -> [Endpoint] -> Mesh
+calculateMesh origin endpoints = map snapTriangle triangles
   where (angle, segments, _) = foldl step' (0, [], []) endpoints'
         (_, _, triangles)    = foldl step' (angle, segments, []) endpoints'
-        endpoints' = List.sort endpoints
+        endpoints' = sort endpoints
         step' = step origin
 
 -- Steps the algorithm to the next endpoint, producing a new triangle if the
@@ -55,8 +56,8 @@ calculateTriangles origin endpoints = map snapTriangle triangles
 step :: Point -> (Angle, [Segment], [Triangle]) -> Endpoint -> (Angle, [Segment], [Triangle])
 step origin (angle, openSegments, triangles) (Endpoint _ segment currentAngle begin) = (angle', openSegments', triangles')
   where openSegments' = if begin
-                        then List.insertBy (comparator origin) segment openSegments
-                        else List.delete segment openSegments
+                        then insertBy (comparator origin) segment openSegments
+                        else delete segment openSegments
 
         openSegment = if null openSegments
                       then Nothing

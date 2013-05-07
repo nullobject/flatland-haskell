@@ -11,6 +11,14 @@ type Energy  = Int
 type Message = (Identifier, Action)
 type MyWire  = Wire LastException IO
 
+-- Returns the message identifier.
+messageId :: Message -> Identifier
+messageId = fst
+
+-- Returns the message action.
+messageAction :: Message -> Action
+messageAction = snd
+
 -- Reads a possible value from string.
 readMaybe :: (Read a) => String -> Maybe a
 readMaybe s = case [x | (x, t) <- reads s, ("", "") <- lex t] of

@@ -9,7 +9,7 @@ import Geometry
 
 main = defaultMain tests
 
-tests = [testAngleBetween, testPointSegmentDistance, testIntersectLines, testIntersects]
+tests = [testAngleBetween, testPointSegmentDistance, testIntersectLines, testIntersectTriangle]
 
 testAngleBetween = testGroup "angleBetween"
   [ testCase "test1" test1
@@ -46,7 +46,7 @@ testIntersectLines = testGroup "intersectLines"
         test3 = intersectLines (-1, -1) (1, -1) (-1, 1) (1, -1) @?= ( 1, -1)
         test4 = intersectLines (-1, -1) (1,  1) (-1, 1) (1,  1) @?= ( 1,  1)
 
-testIntersects = testGroup "intersects"
+testIntersectTriangle = testGroup "intersectTriangle"
   [ testCase "test1" test1
   , testCase "test2" test2
   , testCase "test3" test3
@@ -59,12 +59,12 @@ testIntersects = testGroup "intersects"
 
   where triangle = Triangle (0, 0) (1, 1) (1, 0)
 
-        test1 = intersects ( 0,  0) triangle @?= True
-        test2 = intersects ( 1,  1) triangle @?= True
-        test3 = intersects ( 1,  0) triangle @?= True
-        test4 = intersects ( 0, -1) triangle @?= False
-        test5 = intersects (-1,  0) triangle @?= False
-        test6 = intersects ( 1,  2) triangle @?= False
-        test7 = intersects ( 2,  1) triangle @?= False
-        test8 = intersects ( 2,  0) triangle @?= False
-        test9 = intersects ( 1, -1) triangle @?= False
+        test1 = intersectTriangle ( 0,  0) triangle @?= True
+        test2 = intersectTriangle ( 1,  1) triangle @?= True
+        test3 = intersectTriangle ( 1,  0) triangle @?= True
+        test4 = intersectTriangle ( 0, -1) triangle @?= False
+        test5 = intersectTriangle (-1,  0) triangle @?= False
+        test6 = intersectTriangle ( 1,  2) triangle @?= False
+        test7 = intersectTriangle ( 2,  1) triangle @?= False
+        test8 = intersectTriangle ( 2,  0) triangle @?= False
+        test9 = intersectTriangle ( 1, -1) triangle @?= False

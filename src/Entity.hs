@@ -8,10 +8,13 @@ import qualified Control.Wire as Wire
 import           Core
 import           Data.Aeson
 import           Data.Char (toLower)
+import           Data.Map (Map)
+import qualified Data.Map as Map
 import           Data.VectorSpace
 import           Geometry
 import           Identifier
 import           Prelude hiding ((.), id)
+import           Wire
 
 -- The entity state.
 data State =
@@ -27,11 +30,8 @@ instance ToJSON State where
 -- Represents an actor in the world.
 data Entity = Entity
   {
-    -- The entity identifier.
-    entityId :: Identifier
-
     -- The age of the entity.
-  , entityAge :: Age
+    entityAge :: Age
 
     -- The moving body of the entity.
   , entityBody :: Body
@@ -44,6 +44,9 @@ data Entity = Entity
 
     -- The entity state.
   , entityState :: State
+
+    -- The bullet fired by the entity (if any).
+  , entityBullet :: Maybe Bullet
   } deriving (Show)
 
 instance ToJSON Entity where
@@ -57,11 +60,24 @@ instance ToJSON Entity where
                          , "state"    .= entityState    entity
                          ]
 
--- An entity wire takes an action and produces an entity and maybe a bullet.
-type EntityWire = MyWire Action (Maybe Entity, Maybe Bullet)
+-- An entity wire takes a message and produces an entity state.
+type EntityWire = MyWire Message Entity
+
+-- A map from identifiers to entities.
+type EntitiesMap = Map Identifier Entity
+
+-- An entity router is a wire which takes a list of messages and produces an
+-- entities map.
+type EntityRouter = MyWire [Message] EntitiesMap
+
+-- A function which returns a new entity wire for the given identifier.
+type EntityConstructor = Identifier -> EntityWire
 
 entitySpeed :: Double
 entitySpeed = 1
+
+entityId :: Entity -> Identifier
+entityId entity = bodyId $ entityBody entity
 
 entityPosition :: Entity -> Position
 entityPosition entity = bodyPosition $ entityBody entity
@@ -77,15 +93,15 @@ bulletSpeed = 1
 
 -- Returns a new entity.
 newEntity :: Identifier -> Position -> Entity
-newEntity identifier position = Entity
-  { entityId     = identifier
-  , entityAge    = 0
-  , entityBody   = body
-  , entityHealth = 100
-  , entityEnergy = 100
-  , entityState  = Entity.Idle
-  }
-  where body = newBody {bodyPosition = position}
+newEntity identifier position = Entity { entityAge    = 0
+                                       , entityBody   = body
+                                       , entityHealth = 100
+                                       , entityEnergy = 100
+                                       , entityState  = Entity.Idle
+                                       , entityBullet = Nothing
+                                       }
+
+  where body = (newBody identifier) {bodyPosition = position}
 
 -- If the entity has enough energy to perform the intended action then it
 -- returns the new energy and the action. Otherwise it returns the original
@@ -104,11 +120,11 @@ energyActionWire = accum1 update
                                     then action
                                     else Action.Idle
 
--- The state wire outputs the current entity state. A 'Tick' message propagates
+-- The state wire outputs the current entity state. A 'Update' message propagates
 -- the previous entity state, any other message will change the entity state.
 stateWire :: State -> MyWire Action State
 stateWire = accum1 update
-  where update state Tick = state
+  where update state (Update _) = state
         update _ action = case action of
           Attack   -> Entity.Attacking
           Forward  -> Entity.Moving
@@ -116,22 +132,28 @@ stateWire = accum1 update
           (Turn _) -> Entity.Turning
           _        -> Entity.Idle
 
+-- The position wire outputs the current entity position.
+positionWire :: Position -> MyWire Action Position
+positionWire = accum1 update
+  where update _ (Update body) = bodyPosition body
+        update position _    = position
+
+-- The velocity wire outputs the current entity velocity. It applies an impulse
+-- when it receives a 'Forward' or 'Reverse' action.
+velocityWire :: Velocity -> MyWire (Angle, Action) Velocity
+velocityWire = accum1 update
+  where update _ (rotation, Forward)   = vector rotation
+        update _ (rotation, Reverse)   = -(vector rotation)
+        update velocity (_, Update body) = bodyVelocity body
+        update _ _                     = zeroV
+        vector rotation = (cos rotation, sin rotation) ^* entitySpeed
+
 -- The rotation wire outputs the current entity rotation. A 'Turn' message
 -- rotates the entity to the given angle.
 rotationWire :: Angle -> MyWire Action Angle
 rotationWire = accum1 update
   where update _ (Turn rotation) = rotation
         update rotation _        = rotation
-
--- The velocity wire outputs the current entity velocity. It applies an impulse
--- when it receives a 'Forward' or 'Reverse' action.
-velocityWire :: Velocity -> MyWire (Angle, Action) Velocity
-velocityWire = accum1 update
-  where update _ (rotation, Forward) = vector rotation
-        update _ (rotation, Reverse) = -(vector rotation)
-        update velocity (_, Tick)    = velocity
-        update _ _                   = zeroV
-        vector rotation = (cos rotation, sin rotation) ^* entitySpeed
 
 -- The health wire returns the current health of the entity. It inhibits when
 -- the entity dies.
@@ -154,14 +176,16 @@ fireBulletWire = execute_ $ return . update
 
 
 -- Returns a new entity wire given an initial entity state.
-entityWire :: Entity -> EntityWire
-entityWire entity = proc action -> do
+entityWire_ :: Entity -> EntityWire
+entityWire_ entity = proc message -> do
+  let action = messageAction message
+
   age                            <- timeFrom age0                        -< ()
   (energy, action')              <- energyActionWire (energy0, action0)  -< action
   state                          <- stateWire state0                     -< action'
   rotation                       <- rotationWire rotation0               -< action'
   velocity                       <- velocityWire velocity0               -< (rotation, action')
-  position                       <- integral1_ position0                 -< velocity
+  position                       <- positionWire position0               -< action'
   health                         <- healthWire health0                   -< age
   bullet                         <- fireBulletWire                       -< (rotation, position, action')
 
@@ -170,14 +194,13 @@ entityWire entity = proc action -> do
                    , bodyRotation = rotation
                    }
 
-  let entity' = Just entity { entityAge      = age
-                            , entityBody     = body
-                            , entityHealth   = health
-                            , entityEnergy   = energy
-                            , entityState    = state
-                            }
-
-  returnA -< (entity', bullet)
+  returnA -< entity { entityAge    = age
+                    , entityBody   = body
+                    , entityHealth = health
+                    , entityEnergy = energy
+                    , entityState  = state
+                    , entityBullet = bullet
+                    }
 
   where action0   = Action.Idle
         age0      = entityAge      entity
@@ -189,11 +212,43 @@ entityWire entity = proc action -> do
         state0    = entityState    entity
         velocity0 = entityVelocity entity
 
--- Spawns a new entity.
-spawnWire :: [Rectangle] -> EntityWire
-spawnWire spawnRectangles = mkGen $ \dt action -> do
-  identifier <- Identifier.nextRandom
-  spawnRectangle <- pick spawnRectangles
-  let position = rectangleCentre spawnRectangle
-  let wire = entityWire $ newEntity identifier position
-  stepWire wire dt action
+-- Spawns a new entity with the given identifer, randomly at one of the spawn
+-- points.
+entityWire :: [Position] -> EntityConstructor
+entityWire spawnPoints identifier = mkGen $ \dt message -> do
+  -- Choose a random spawn point.
+  position <- pick spawnPoints
+
+  -- Create a new entity wire.
+  let wire = entityWire_ $ newEntity identifier position
+
+  stepWire wire dt message
+
+-- Returns a wire which routes input messages to a map of entities.
+entityRouter_
+  :: EntitiesMap             -- ^ Map from identifiers to entities.
+  -> (Message -> Identifier) -- ^ Function to turn the message into an identifier.
+  -> EntityConstructor       -- ^ Base wire constructor.
+  -> EntityRouter
+entityRouter_ entitiesMap key constructor = entityRouter_' entitiesMap $ context_ key constructor
+  where
+    entityRouter_' :: EntitiesMap -> EntityWire -> EntityRouter
+    entityRouter_' entitiesMap context = mkGen $ \dt messages -> do
+      (entitiesMap', context') <- loop dt context entitiesMap messages
+      return (Right entitiesMap', entityRouter_' entitiesMap' context')
+
+    -- Steps the entity context with each message.
+    loop :: Time -> EntityWire -> EntitiesMap -> [Message] -> IO (EntitiesMap, EntityWire)
+    loop dt context entitiesMap [] = return (entitiesMap, context)
+    loop dt context entitiesMap messages = do
+      let message = head messages
+      let messages' = tail messages
+      (mx, context') <- stepWire context dt message
+      let entitiesMap' = case mx of
+                         Left _       -> Map.delete (key message) entitiesMap
+                         Right entity -> Map.insert (key message) entity entitiesMap
+      loop dt context' entitiesMap' messages'
+
+-- Returns an entity router for the given entity constructor.
+entityRouter :: EntityConstructor -> EntityRouter
+entityRouter constructor = entityRouter_ Map.empty messageId constructor

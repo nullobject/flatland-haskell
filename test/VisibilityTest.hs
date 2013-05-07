@@ -9,7 +9,7 @@ import Visibility
 
 main = defaultMain tests
 
-tests = [testCalculateEndpoints, testSweep]
+tests = [testCalculateEndpoints, testCalculateVisibilityMesh]
 
 testCalculateEndpoints = testGroup "calculateEndpoints"
   [ testCase "test1" test1
@@ -25,7 +25,7 @@ testCalculateEndpoints = testGroup "calculateEndpoints"
           [ Endpoint (-1, 1) (Segment (-1, 1) (1, 1)) 3.141592653589793 False
           , Endpoint ( 1, 1) (Segment (-1, 1) (1, 1)) 0.0               True ]
 
-testSweep = testGroup "calculateVisibility"
+testCalculateVisibilityMesh = testGroup "calculateVisibilityMesh"
   [ testCase "test1" test1
   , testCase "test2" test2
   , testCase "test3" test3
@@ -34,25 +34,25 @@ testSweep = testGroup "calculateVisibility"
   where rectangles = [ Rectangle (-1, -1) ( 2,  2)
                      , Rectangle (-5, -5) (10, 10) ]
 
-        test1 = calculateVisibility (0, 0) rectangles @?=
+        test1 = calculateVisibilityMesh (0, 0) rectangles @?=
           [ Triangle (0, 0) ( 1,  1) (-1,  1)
           , Triangle (0, 0) ( 1, -1) ( 1,  1)
           , Triangle (0, 0) (-1, -1) ( 1, -1)
           , Triangle (0, 0) (-1,  1) (-1, -1) ]
 
-        test2 = calculateVisibility (0, 1) rectangles @?=
+        test2 = calculateVisibilityMesh (0, 1) rectangles @?=
           [ Triangle (0, 1) (-1,  1) ( 1,  1)
           , Triangle (0, 1) ( 1, -1) ( 1,  1)
           , Triangle (0, 1) (-1, -1) ( 1, -1)
           , Triangle (0, 1) (-1,  1) (-1, -1) ]
 
-        test3 = calculateVisibility (0, 2) rectangles @?=
+        test3 = calculateVisibilityMesh (0, 2) rectangles @?=
           [ Triangle (0, 2) ( 5,  5) (-5,  5)
           , Triangle (0, 2) ( 5, -3) ( 5,  5)
           , Triangle (0, 2) (-1,  1) ( 1,  1)
           , Triangle (0, 2) (-5,  5) (-5, -3) ]
 
-        test4 = calculateVisibility (0, 4) rectangles @?=
+        test4 = calculateVisibilityMesh (0, 4) rectangles @?=
           [ Triangle (0, 4) ( 5,  5) (-5,  5)
           , Triangle (0, 4) ( 5, -5) ( 5,  5)
           , Triangle (0, 4) ( 3, -5) ( 5, -5)

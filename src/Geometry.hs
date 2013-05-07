@@ -27,6 +27,9 @@ data Rectangle = Rectangle
   , rectangleExtents  :: Extents
   } deriving (Eq, Show)
 
+-- A list of triangles.
+type Mesh = [Triangle]
+
 instance ToJSON Rectangle where
   toJSON rectangle = object [ "position" .= rectanglePosition rectangle
                             , "extents"  .= rectangleExtents  rectangle ]
@@ -42,6 +45,10 @@ angleDifference a b
   | d >  pi   = d - 2 * pi
   | otherwise = d
   where d = b - a
+
+-- 2D vector cross product.
+(<*>) :: Point -> Point -> Double
+(<*>) (p1, p2) (q1, q2) = p1 * q2 - p2 * q1
 
 -- Calculates the distance from a point to a line segment.
 --
@@ -65,16 +72,16 @@ intersectLines :: Point -> Point -> Point -> Point -> Point
 intersectLines p r q s = p ^+^ ((r ^-^ p) ^* t)
   where t = (q ^-^ p) <*> (s ^-^ q) / (r ^-^ p) <*> (s ^-^ q)
 
--- 2D vector cross product.
-(<*>) :: Point -> Point -> Double
-(<*>) (p1, p2) (q1, q2) = p1 * q2 - p2 * q1
+-- Returns true if the given point is inside the mesh.
+intersectMesh :: Point -> Mesh -> Bool
+intersectMesh point mesh = any (intersectTriangle point) mesh
 
--- Returns true if the point is in the triangle.
+-- Returns true if the point is inside the triangle.
 --
 -- See:
 --   http://www.blackpawn.com/texts/pointinpoly/
-intersects :: Point -> Triangle -> Bool
-intersects p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
+intersectTriangle :: Point -> Triangle -> Bool
+intersectTriangle p (Triangle a b c) = (u >= 0) && (v >= 0) && (u + v <= 1)
   where v0 = c ^-^ a
         v1 = b ^-^ a
         v2 = p ^-^ a

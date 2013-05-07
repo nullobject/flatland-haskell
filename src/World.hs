@@ -4,6 +4,7 @@ module World where
 
 import           Action
 import           Bullet
+import           Collision
 import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
@@ -13,7 +14,6 @@ import qualified Data.List as List
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Traversable as Traversable
 import           Entity
 import           Geometry
 import           Identifier
@@ -32,8 +32,8 @@ data World = World
     -- The layers in the world map.
   , worldLayers :: [Layer]
 
-    -- The players in the world.
-  , worldPlayers :: [Player]
+    -- A map of the entities in the world.
+  , worldEntitiesMap :: EntitiesMap
 
     -- The bullets flying around.
   , worldBullets :: [Bullet]
@@ -41,8 +41,8 @@ data World = World
     -- The collision geometry.
   , worldCollisionRectangles :: [Rectangle]
 
-    -- The locations a player can spawn from.
-  , worldSpawnRectangles :: [Rectangle]
+    -- The positions a player can spawn from.
+  , worldSpawnPoints :: [Position]
 
     -- The world map tile width.
   , worldTileWidth :: Int
@@ -52,99 +52,72 @@ data World = World
   } deriving (Show)
 
 instance ToJSON World where
-  toJSON world = object [ "age"                 .= worldAge                 world
-                        , "layers"              .= worldLayers              world
-                        , "players"             .= worldPlayers             world
+  toJSON world = object [ "age"                 .= worldAge world
+                        , "layers"              .= worldLayers world
+                        , "entities"            .= worldEntities world
                         , "collisionRectangles" .= worldCollisionRectangles world
-                        , "tileWidth"           .= worldTileWidth           world
-                        , "tileHeight"          .= worldTileHeight          world
+                        , "tileWidth"           .= worldTileWidth world
+                        , "tileHeight"          .= worldTileHeight world
                         ]
 
--- A world wire takes a list of messages and produces a new world state.
+-- A world wire takes a list of messages and produces a world state.
 type WorldWire = MyWire [Message] World
-
--- A route wire routes messages to players.
-type RouterWire = MyWire [Message] [(Player, Maybe Bullet)]
-
--- A map from an identifier to a player wire.
-type PlayerWireMap = Map Identifier PlayerWire
-
--- Returns a new world.
-newWorld :: TiledMap -> World
-newWorld tiledMap = World
-  { worldAge                 = 0
-  , worldLayers              = layers
-  , worldPlayers             = []
-  , worldBullets             = []
-  , worldCollisionRectangles = collisionRectangles
-  , worldSpawnRectangles     = spawnRectangles
-  , worldTileWidth           = tileWidth
-  , worldTileHeight          = tileHeight
-  }
-
-  where layers = Map.getTileLayers tiledMap
-        collisionRectangles = Map.getCollisionRectangles tiledMap
-        spawnRectangles = Map.getSpawnRectangles tiledMap
-        tileWidth = Map.mapTileWidth tiledMap
-        tileHeight = Map.mapTileHeight tiledMap
-
--- Returns the player with the given identifier.
-getPlayer :: Identifier -> World -> Maybe Player
-getPlayer identifier world = List.find predicate $ worldPlayers world
-  where predicate = \player -> playerId player == identifier
 
 -- Returns the entities in the world.
 worldEntities :: World -> [Entity]
-worldEntities world = Maybe.catMaybes $ map playerEntity $ worldPlayers world
+worldEntities world = Map.elems $ worldEntitiesMap world
 
--- Returns a new router wire given a player wire constructor function.
---
--- Messages are routed to player wires with matching identifiers. Player wires
--- with no addressed messages default to the 'Idle' action.
-routerWire :: (Identifier -> PlayerWire) -> RouterWire
-routerWire playerWireConstructor = route Map.empty
-  where
-    route :: PlayerWireMap -> RouterWire
-    route playerWireMap = mkGen $ \dt messages -> do
-      -- Create a map from identifiers to actions.
-      let actionMap = Map.fromList messages
+-- Returns the entity in the world with the given identifier.
+entityWithId :: Identifier -> World -> Maybe Entity
+entityWithId identifier world = Map.lookup identifier entitiesMap
+  where entitiesMap = worldEntitiesMap world
 
-      -- Create a new player wire if one with the identifier doesn't already
-      -- exist (i.e. A new player joins the world).
-      let playerWireMap' = foldl (ensurePlayerWire playerWireConstructor) playerWireMap $ Map.keys actionMap
+-- Returns a new world state for the given tiled map.
+newWorld :: TiledMap -> World
+newWorld tiledMap = World { worldAge                 = 0
+                          , worldLayers              = layers
+                          , worldEntitiesMap         = Map.empty
+                          , worldBullets             = []
+                          , worldCollisionRectangles = collisionRectangles
+                          , worldSpawnPoints         = spawnPoints
+                          , worldTileWidth           = tileWidth
+                          , worldTileHeight          = tileHeight
+                          }
 
-      -- Step the player wires, supplying the optional actions.
-      res <- Key.mapWithKeyM (\identifier wire -> stepWire wire dt (Map.findWithDefault Action.Idle identifier actionMap)) playerWireMap'
-
-      -- WTF does this do?
-      let res' = Traversable.sequence . fmap (\(mx, w) -> fmap (, w) mx) $ res
-
-      return (fmap Map.elems (fmap (fmap fst) res'), route (fmap snd res))
-
--- Ensures a player wire for the given identifier exists in the map. If not, it
--- creates one using the player wire constructor function.
-ensurePlayerWire :: (Identifier -> PlayerWire) -> PlayerWireMap -> Identifier -> PlayerWireMap
-ensurePlayerWire playerWireConstructor playerWireMap identifier = Map.alter update identifier playerWireMap
-  where update = Just . maybe wire Wire.id
-        wire = playerWireConstructor identifier
+  where layers = Map.getTileLayers tiledMap
+        collisionRectangles = Map.getCollisionRectangles tiledMap
+        spawnPoints = map rectangleCentre $ Map.getSpawnRectangles tiledMap
+        tileWidth = Map.mapTileWidth tiledMap
+        tileHeight = Map.mapTileHeight tiledMap
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
-worldWire world = proc messages -> do
-  -- Increment the age of the world.
-  age <- timeFrom age0 -< ()
+worldWire world = worldWire' world $ entityRouter entityConstructor
+  where
+    entityConstructor = entityWire $ worldSpawnPoints world
 
-  -- Step the route wire.
-  playerBullets <- wire -< messages
+    -- TODO: Step the entities, run physics, then step entities again.
+    worldWire' :: World -> EntityRouter -> WorldWire
+    worldWire' world entityRouter = mkGen $ \dt messages -> do
+      -- Step the entity router with player messages.
+      (mx, entityRouter') <- stepWire entityRouter 0 messages
 
-  let players = map fst playerBullets
-  let bullets = Maybe.catMaybes $ map snd playerBullets
+      let entitiesMap = case mx of
+                        Left _            -> Map.empty
+                        Right entitiesMap -> entitiesMap
 
-  -- Return the world state.
-  returnA -< world { worldAge     = age
-                   , worldPlayers = players
-                   , worldBullets = bullets
-                   }
+      -- Run the physics simulation.
+      let bodies  = map entityBody $ Map.elems entitiesMap
+          bodies' = runPhysics bodies dt
 
-  where age0 = worldAge world
-        wire = routerWire $ (playerWire $ worldSpawnRectangles world) . newPlayer
+      -- Step the entity router with 'Update' messages.
+      let messages' = map (\body -> (bodyId body, Update body)) bodies
+      (mx, entityRouter'') <- stepWire entityRouter' dt messages'
+
+      let entitiesMap' = case mx of
+                         Left _            -> Map.empty
+                         Right entitiesMap -> entitiesMap
+
+      let world' = world {worldEntitiesMap = entitiesMap'}
+
+      return (Right world', worldWire' world' entityRouter'')
