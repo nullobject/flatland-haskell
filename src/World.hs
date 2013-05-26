@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module World where
 
 import           Action
@@ -9,11 +7,9 @@ import           Control.Wire hiding (object)
 import qualified Control.Wire as Wire
 import           Core
 import           Data.Aeson
-import qualified Data.Key as Key
 import qualified Data.List as List
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import qualified Data.Maybe as Maybe
 import           Entity
 import           Geometry
 import           Identifier
@@ -33,7 +29,7 @@ data World = World
   , worldLayers :: [Layer]
 
     -- A map of the entities in the world.
-  , worldEntitiesMap :: EntitiesMap
+  , worldEntityMap :: EntityMap
 
     -- The bullets flying around.
   , worldBullets :: [Bullet]
@@ -65,18 +61,18 @@ type WorldWire = MyWire [Message] World
 
 -- Returns the entities in the world.
 worldEntities :: World -> [Entity]
-worldEntities world = Map.elems $ worldEntitiesMap world
+worldEntities world = Map.elems $ worldEntityMap world
 
 -- Returns the entity in the world with the given identifier.
 entityWithId :: Identifier -> World -> Maybe Entity
 entityWithId identifier world = Map.lookup identifier entitiesMap
-  where entitiesMap = worldEntitiesMap world
+  where entitiesMap = worldEntityMap world
 
 -- Returns a new world state for the given tiled map.
 newWorld :: TiledMap -> World
 newWorld tiledMap = World { worldAge                 = 0
                           , worldLayers              = layers
-                          , worldEntitiesMap         = Map.empty
+                          , worldEntityMap           = Map.empty
                           , worldBullets             = []
                           , worldCollisionRectangles = collisionRectangles
                           , worldSpawnPoints         = spawnPoints
@@ -118,6 +114,6 @@ worldWire world = worldWire' world $ entityRouter entityConstructor
                          Left _            -> Map.empty
                          Right entitiesMap -> entitiesMap
 
-      let world' = world {worldEntitiesMap = entitiesMap'}
+      let world' = world {worldEntityMap = entitiesMap'}
 
       return (Right world', worldWire' world' entityRouter'')

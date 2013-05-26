@@ -29,7 +29,7 @@ data Game = Game
     gameWorld :: World
 
     -- A map of the players in the game.
-  , gamePlayersMap :: PlayersMap
+  , gamePlayerMap :: PlayerMap
   } deriving (Show)
 
 -- A game wire takes a list of messages and produces a game state.
@@ -37,38 +37,36 @@ type GameWire = MyWire [Message] Game
 
 -- Returns the players in the game.
 gamePlayers :: Game -> [Player]
-gamePlayers game = Map.elems $ gamePlayersMap game
+gamePlayers game = Map.elems $ gamePlayerMap game
 
 -- Returns the player in the game with the given identifier.
 playerWithId :: Identifier -> Game -> Maybe Player
-playerWithId identifier game = Map.lookup identifier playersMap
-  where playersMap = gamePlayersMap game
+playerWithId identifier game = Map.lookup identifier playerMap
+  where playerMap = gamePlayerMap game
 
 -- Returns a new game state for the given tiled map.
 newGame :: TiledMap -> Game
-newGame tiledMap = Game { gameWorld      = world
-                        , gamePlayersMap = gamePlayers
+newGame tiledMap = Game { gameWorld     = world
+                        , gamePlayerMap = Map.empty
                         }
 
-  where world       = newWorld tiledMap
-        gamePlayers = Map.empty
+  where world = newWorld tiledMap
 
 -- Returns a new game wire for the given initial game state.
 gameWire :: Game -> GameWire
 gameWire game = proc playerMessages -> do
   -- Step the player router.
-  (entityMessages, playersMap) <- playerRouter playersMap0 playerWire -< playerMessages
+  (entityMessages, playerMap) <- playerRouter playerWire -< playerMessages
 
   -- Step the world wire.
   world <- worldWire world0 -< entityMessages
 
   -- Return a new game state.
-  returnA -< game { gameWorld      = world
-                  , gamePlayersMap = playersMap
+  returnA -< game { gameWorld     = world
+                  , gamePlayerMap = playerMap
                   }
 
-  where world0      = gameWorld game
-        playersMap0 = Map.empty
+  where world0 = gameWorld game
 
 -- Responds to the given requests with the game state.
 respond :: [Request Message WorldView] -> Game -> IO ()

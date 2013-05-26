@@ -64,14 +64,14 @@ instance ToJSON Entity where
 type EntityWire = MyWire Message Entity
 
 -- A map from identifiers to entities.
-type EntitiesMap = Map Identifier Entity
+type EntityMap = Map Identifier Entity
 
 -- An entity router is a wire which takes a list of messages and produces an
 -- entities map.
-type EntityRouter = MyWire [Message] EntitiesMap
+type EntityRouter = MyWire [Message] EntityMap
 
 -- A function which returns a new entity wire for the given identifier.
-type EntityConstructor = Identifier -> EntityWire
+type EntityWireConstructor = Identifier -> EntityWire
 
 entitySpeed :: Double
 entitySpeed = 1
@@ -214,7 +214,7 @@ entityWire_ entity = proc message -> do
 
 -- Spawns a new entity with the given identifer, randomly at one of the spawn
 -- points.
-entityWire :: [Position] -> EntityConstructor
+entityWire :: [Position] -> EntityWireConstructor
 entityWire spawnPoints identifier = mkGen $ \dt message -> do
   -- Choose a random spawn point.
   position <- pick spawnPoints
@@ -226,19 +226,19 @@ entityWire spawnPoints identifier = mkGen $ \dt message -> do
 
 -- Returns a wire which routes input messages to a map of entities.
 entityRouter_
-  :: EntitiesMap             -- ^ Map from identifiers to entities.
+  :: EntityMap               -- ^ Map from identifiers to entities.
   -> (Message -> Identifier) -- ^ Function to turn the message into an identifier.
-  -> EntityConstructor       -- ^ Base wire constructor.
+  -> EntityWireConstructor   -- ^ Base wire constructor.
   -> EntityRouter
 entityRouter_ entitiesMap key constructor = entityRouter_' entitiesMap $ context_ key constructor
   where
-    entityRouter_' :: EntitiesMap -> EntityWire -> EntityRouter
+    entityRouter_' :: EntityMap -> EntityWire -> EntityRouter
     entityRouter_' entitiesMap context = mkGen $ \dt messages -> do
       (entitiesMap', context') <- loop dt context entitiesMap messages
       return (Right entitiesMap', entityRouter_' entitiesMap' context')
 
     -- Steps the entity context with each message.
-    loop :: Time -> EntityWire -> EntitiesMap -> [Message] -> IO (EntitiesMap, EntityWire)
+    loop :: Time -> EntityWire -> EntityMap -> [Message] -> IO (EntityMap, EntityWire)
     loop dt context entitiesMap [] = return (entitiesMap, context)
     loop dt context entitiesMap messages = do
       let message = head messages
@@ -250,5 +250,5 @@ entityRouter_ entitiesMap key constructor = entityRouter_' entitiesMap $ context
       loop dt context' entitiesMap' messages'
 
 -- Returns an entity router for the given entity constructor.
-entityRouter :: EntityConstructor -> EntityRouter
+entityRouter :: EntityWireConstructor -> EntityRouter
 entityRouter constructor = entityRouter_ Map.empty messageId constructor
