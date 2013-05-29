@@ -103,11 +103,12 @@ worldWire world = worldWire' world $ entityRouter entityConstructor
                         Right entitiesMap -> entitiesMap
 
       -- Run the physics simulation.
+      -- TODO: Handle collisions with static world geometry.
       let bodies  = map entityBody $ Map.elems entitiesMap
           bodies' = runPhysics bodies dt
 
       -- Step the entity router with 'Update' messages.
-      let messages' = map (\body -> (bodyId body, Update body)) bodies
+      let messages' = map (\body -> (bodyId body, Update body)) bodies'
       (mx, entityRouter'') <- stepWire entityRouter' dt messages'
 
       let entitiesMap' = case mx of

@@ -14,7 +14,8 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import           Geometry
-import           Identifier
+import           Identifier (Identifier)
+import qualified Identifier
 import           Prelude hiding ((.), id)
 import           Wire
 
@@ -71,16 +72,38 @@ newPlayer identifier = Player { playerId       = identifier
                               , playerEntityId = Nothing
                               }
 
+deadPlayerWire :: Player -> PlayerWire
+deadPlayerWire player = pure (Nothing, player') . Wire.until isSpawnMessage
+  where player' = player {playerState = Dead}
+        isSpawnMessage message = fmap snd message == Just Spawn
+
+spawningPlayerWire :: Player -> PlayerWire
+spawningPlayerWire player = pure (Nothing, player') . for 3
+  where player' = player {playerState = Spawning}
+
+alivePlayerWire :: Player -> PlayerWire
+alivePlayerWire player = mkGen $ \dt playerMessage -> do
+  entityId <- Identifier.nextRandom
+  let player' = player {playerState = Alive, playerEntityId = Just entityId}
+  let entityMessage = Just (entityId, Spawn)
+  return (Right (entityMessage, player'), relayMessageWire player')
+
+  where
+    relayMessageWire :: Player -> PlayerWire
+    relayMessageWire player = mkGen $ \dt playerMessage -> do
+      let entityId = Maybe.fromJust $ playerEntityId player
+      let action = Maybe.maybe Idle (\(_, action) -> action) playerMessage
+      let entityMessage = Just (entityId, action)
+      return (Right (entityMessage, player), relayMessageWire player)
+
 -- Returns a new player wire given an initial player state.
 --
--- TODO: Pass through the player message only if an entity has been spawned.
 -- TODO: If a player message hasn't been received for 10 seconds, then inhibit.
-playerWire_ :: Player -> PlayerWire
-playerWire_ player = proc playerMessage -> do
-  returnA -< (playerMessage, player)
-
 playerWire :: PlayerWireConstructor
 playerWire identifier = playerWire_ $ newPlayer identifier
+  where
+    playerWire_ :: Player -> PlayerWire
+    playerWire_ player = deadPlayerWire player --> spawningPlayerWire player --> alivePlayerWire player
 
 -- Returns a wire which routes messages to players.
 playerRouter :: PlayerWireConstructor -> PlayerRouter
