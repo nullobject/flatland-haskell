@@ -83,8 +83,8 @@ newBody identifier = Body { bodyId          = identifier
                           , bodyPosition    = zeroV
                           , bodyVelocity    = zeroV
                           , bodyRotation    = 0
-                          , bodyInverseMass = 1
                           , bodyExtents     = (0.5, 0.5)
+                          , bodyInverseMass = 1
                           }
 
 -- Returns the bodies in the collision as a list.

@@ -30,12 +30,12 @@ testRunPhysics = testGroup "runPhysics"
           , bodyInverseMass = 0.5
           }
 
-        result = runPhysics [a, b] 1
+        [a', b'] = runPhysics [a, b] 1
 
-        test1 = bodyPosition (head result) @?~= ( 1.5, 0.0)
-        test2 = bodyPosition (last result) @?~= ( 3.5, 0.0)
-        test3 = bodyVelocity (head result) @?~= (-2.0, 0.0)
-        test4 = bodyVelocity (last result) @?~= ( 0.0, 0.0)
+        test1 = bodyPosition a' @?~= ( 1.5, 0.0)
+        test2 = bodyPosition b' @?~= ( 3.5, 0.0)
+        test3 = bodyVelocity a' @?~= (-2.0, 0.0)
+        test4 = bodyVelocity b' @?~= ( 0.0, 0.0)
 
 testCalculateCollision = testGroup "calculateCollision"
   [ testCase "test1" test1

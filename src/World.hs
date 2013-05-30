@@ -98,8 +98,10 @@ newWorld tiledMap = do
 staticBody :: Rectangle -> IO Body
 staticBody rectangle = do
   id <- Identifier.nextRandom
-  return (newBody id) { bodyExtents  = rectangleExtents rectangle
-                      , bodyPosition = rectangleCentre  rectangle }
+  return (newBody id) { bodyPosition    = rectangleCentre  rectangle
+                      , bodyExtents     = rectangleExtents rectangle
+                      , bodyInverseMass = 0
+                      }
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
@@ -119,8 +121,8 @@ worldWire world = worldWire' world $ entityRouter entityConstructor
 
       -- Run the physics simulation.
       let entityBodies = map entityBody $ Map.elems entitiesMap
-          -- staticBodies = worldStaticBodies world
-          bodies       = entityBodies
+          staticBodies = worldStaticBodies world
+          bodies       = staticBodies ++ entityBodies
           bodies'      = runPhysics bodies dt
 
       -- Step the entity router with 'Update' messages.
