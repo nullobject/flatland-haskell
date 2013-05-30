@@ -168,11 +168,7 @@ function partial(fn) {
     source.onerror = function(e) { console.log(e); }
 
     source.onmessage = function(message) {
-      var data = JSON.parse(message.data),
-        entities = data
-          .players
-          .map(function(player) { return player.entity; })
-          .filter(function(player) { return player != null });
+      var data = JSON.parse(message.data);
 
       console.log(data);
 
@@ -182,7 +178,7 @@ function partial(fn) {
 
       updateDebug(data.collisionRectangles, data.tileWidth, data.tileHeight, debugContainer);
       updatePlayfield(data.layers, data.tileWidth, data.tileHeight, playfieldContainer);
-      updateEntities(entities, data.tileWidth, data.tileHeight, entitiesContainer);
+      updateEntities(data.entities, data.tileWidth, data.tileHeight, entitiesContainer);
     }
   });
 }());

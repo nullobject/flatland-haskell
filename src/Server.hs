@@ -70,7 +70,8 @@ route request = do
     ["tiles.png"]            -> return $ Wai.ResponseFile status200 [("Content-Type", "image/png")]       "static/tiles.png"            Nothing
     ["action"]               -> actionHandler request
     ["events"]               -> lift $ Wai.EventSource.eventSourceAppChan (eventChannel server) request
-    _                        -> error "unexpected pathInfo"
+    -- Should return 404.
+    _                        -> error $ "unexpected pathInfo: " ++ (unpack . Wai.rawPathInfo) request
 
 -- Runs the server with the given request channel.
 run :: Chan Wai.EventSource.ServerEvent -> Channel Message WorldView -> IO ()

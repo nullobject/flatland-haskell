@@ -66,11 +66,22 @@ type PlayerRouter = MyWire [Message] ([Message], PlayerMap)
 type PlayerWireConstructor = Identifier -> PlayerWire
 
 -- Returns a new player with the given identifier.
-newPlayer :: Identifier -> Player
-newPlayer identifier = Player { playerId       = identifier
-                              , playerState    = Dead
-                              , playerEntityId = Nothing
-                              }
+newPlayer :: Identifier -> IO Player
+newPlayer identifier = return Player { playerId       = identifier
+                                     , playerState    = Dead
+                                     , playerEntityId = Nothing
+                                     }
+
+-- Returns a new player wire given an initial player state.
+--
+-- TODO: If a player message hasn't been received for 10 seconds, then inhibit.
+playerWire :: PlayerWireConstructor
+playerWire identifier = mkGen $ \dt messages -> do
+  player <- newPlayer identifier
+  stepWire (playerWire_ player) dt messages
+  where
+    playerWire_ :: Player -> PlayerWire
+    playerWire_ player = deadPlayerWire player --> spawningPlayerWire player --> alivePlayerWire player
 
 deadPlayerWire :: Player -> PlayerWire
 deadPlayerWire player = pure (Nothing, player') . Wire.until isSpawnMessage
@@ -95,15 +106,6 @@ alivePlayerWire player = mkGen $ \dt playerMessage -> do
       let action = Maybe.maybe Idle (\(_, action) -> action) playerMessage
       let entityMessage = Just (entityId, action)
       return (Right (entityMessage, player), relayMessageWire player)
-
--- Returns a new player wire given an initial player state.
---
--- TODO: If a player message hasn't been received for 10 seconds, then inhibit.
-playerWire :: PlayerWireConstructor
-playerWire identifier = playerWire_ $ newPlayer identifier
-  where
-    playerWire_ :: Player -> PlayerWire
-    playerWire_ player = deadPlayerWire player --> spawningPlayerWire player --> alivePlayerWire player
 
 -- Returns a wire which routes messages to players.
 playerRouter :: PlayerWireConstructor -> PlayerRouter

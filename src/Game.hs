@@ -45,12 +45,12 @@ playerWithId identifier game = Map.lookup identifier playerMap
   where playerMap = gamePlayerMap game
 
 -- Returns a new game state for the given tiled map.
-newGame :: TiledMap -> Game
-newGame tiledMap = Game { gameWorld     = world
-                        , gamePlayerMap = Map.empty
-                        }
-
-  where world = newWorld tiledMap
+newGame :: TiledMap -> IO Game
+newGame tiledMap = do
+  world <- newWorld tiledMap
+  return Game { gameWorld     = world
+              , gamePlayerMap = Map.empty
+              }
 
 -- Returns a new game wire for the given initial game state.
 gameWire :: Game -> GameWire
@@ -80,11 +80,14 @@ respond requests game = mapM_ respond' requests
 -- Runs the main game loop.
 run :: Channel Message WorldView -> Chan Wai.EventSource.ServerEvent -> IO ()
 run messageChannel eventChannel = do
-  -- Load the tiled map.
+  -- Load the tile map.
   tiledMap <- loadMapFile "static/test.tmx"
 
-  -- Create a game wire for the tile map.
-  let wire = gameWire $ newGame tiledMap
+  -- Create a new game.
+  game <- newGame tiledMap
+
+  -- Create a game wire.
+  let wire = gameWire game
 
   -- Run the loop.
   loop wire $ counterSession 1
@@ -103,7 +106,13 @@ run messageChannel eventChannel = do
       case mx of
         -- Left _ ->
         Right game -> do
-          putStrLn $ show game
+          -- putStrLn $ show game
+          let worldJSON = encode $ gameWorld game
+
+          -- Write the world JSON to the event channel.
+          _ <- liftIO $ writeChan eventChannel (Wai.EventSource.ServerEvent Nothing Nothing [fromLazyByteString worldJSON])
+
+          -- Respond to pending requests.
           respond requests game
 
       -- Sleep for a second.
