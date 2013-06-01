@@ -52,8 +52,8 @@ instance ToJSON Body
 -- Represents a collision between two bodies.
 data Collision = Collision
   {
-    -- The bodies in the collision.
-    collisionBodies :: (Body, Body)
+    -- The bodies involved in the collision.
+    collisionBodies :: [Body]
 
     -- The time of first contact.
   , collisionFirstContactTime :: Time
@@ -89,11 +89,6 @@ newBody identifier = Body { bodyId          = identifier
                           , bodyInverseMass = 1
                           }
 
--- Returns the bodies in the collision as a list.
-collisionBodies_ :: Collision -> [Body]
-collisionBodies_ collision = [bodyA, bodyB]
-  where (bodyA, bodyB) = collisionBodies collision
-
 -- Runs the physics simulation for the given static geometry and dynamic bodies
 -- over a time interval.
 runPhysics :: [Rectangle] -> [Body] -> Time -> [Body]
@@ -116,7 +111,7 @@ runPhysics staticGeometry bodies dt
         tFirst' = tFirst - epsilon
         dt' = dt - tFirst'
         epsilon = 1.0e-8
-        nonCollidingBodies = bodies \\ collisionBodies_ firstCollision
+        nonCollidingBodies = bodies \\ collisionBodies firstCollision
         bodies' = integrateBodies nonCollidingBodies tFirst' ++ resolveCollision firstCollision tFirst'
 
 -- Resolves the velocities of the bodies in the given collision.
@@ -136,7 +131,7 @@ resolveCollision collision dt
                 , bodyB' {bodyVelocity = velocityB ^-^ inverseMassB *^ impulsePerUnitInverseMass}
                 ]
 
-  where (bodyA, bodyB) = collisionBodies collision
+  where [bodyA, bodyB] = collisionBodies collision
         bodyA' = integrateBody bodyA dt
         bodyB' = integrateBody bodyB dt
         separatingVelocity = (velocityA ^-^ velocityB) <.> collisionNormal collision
@@ -174,7 +169,7 @@ collideBodies bodyA bodyB
   | otherwise      = Nothing
   where contact = calculateCollision (AABB positionA extentsA) (AABB positionB extentsB) velocityA velocityB
         Just (tFirst, tLast) = contact
-        collision = Collision (bodyA, bodyB) tFirst tLast normal
+        collision = Collision [bodyA, bodyB] tFirst tLast normal
         normal = normalized $ positionA ^-^ positionB
         velocityA = bodyVelocity bodyA
         velocityB = bodyVelocity bodyB
