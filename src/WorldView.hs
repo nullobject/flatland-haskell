@@ -49,12 +49,12 @@ playerVisibilityMesh player world
   -- If the player has not spawned, then they can't see anything.
   | isNothing entity = []
 
-  -- Otherwise, calculate the mesh visible to the entity.
-  | otherwise = calculateVisibilityMesh position collisionRectangles
+  -- Otherwise, calculate the visibility mesh for the entity.
+  | otherwise = calculateVisibilityMesh position staticGeometry
 
   where entity = case playerEntityId player of
                  Just id -> entityWithId id world
                  Nothing -> Nothing
 
         position = entityPosition . fromJust $ entity
-        collisionRectangles = worldCollisionRectangles world
+        staticGeometry = worldStaticGeometry world

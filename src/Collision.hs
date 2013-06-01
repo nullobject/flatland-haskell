@@ -73,9 +73,11 @@ instance Ord Collision where
           b1 = collisionLastContactTime b
 
 -- Returns a list of 2-combinations without repetition.
+pairs :: [a] -> [(a, a)]
 pairs xs = [(a, b) | (a:as) <- init . tails $ xs, b <- as]
 
 -- Returns a list of 2-combinations with repetition.
+pairs_ :: [a] -> [(a, a)]
 pairs_ xs = [(a, b) | as@(a:_) <- init . tails $ xs, b <- as]
 
 newBody :: Identifier -> Body
@@ -92,10 +94,11 @@ collisionBodies_ :: Collision -> [Body]
 collisionBodies_ collision = [bodyA, bodyB]
   where (bodyA, bodyB) = collisionBodies collision
 
--- Runs the physics simulation for the bodies over the given time interval.
-runPhysics :: [Body] -> Time -> [Body]
-runPhysics bodies 0 = bodies
-runPhysics bodies dt
+-- Runs the physics simulation for the given static geometry and dynamic bodies
+-- over a time interval.
+runPhysics :: [Rectangle] -> [Body] -> Time -> [Body]
+runPhysics staticGeometry bodies 0 = bodies
+runPhysics staticGeometry bodies dt
   -- If there were no collisions, then we're done.
   | null collisions = integrateBodies bodies dt
 
@@ -105,7 +108,7 @@ runPhysics bodies dt
   -- Otherwise, integrate the bodies until the time of the first collision.
   -- Resolve the collision, then run the simulation for the remainder of the
   -- time interval.
-  | otherwise = runPhysics bodies' dt'
+  | otherwise = runPhysics staticGeometry bodies' dt'
 
   where collisions = calculateCollisions bodies dt
         firstCollision = minimum collisions
@@ -160,7 +163,7 @@ integrateBody body dt = body {bodyPosition = position'}
         velocity  = bodyVelocity body
         position' = position ^+^ (velocity ^* dt)
 
--- Returns the collisions between the bodies over the given time interval.
+-- Returns the collisions between the given dynamic bodies over a time interval.
 calculateCollisions :: [Body] -> Time -> [Collision]
 calculateCollisions bodies dt = mapMaybe (uncurry collideBodies) $ pairs bodies
 

@@ -176,7 +176,7 @@ function partial(fn) {
       document.getElementById("tile-width").innerHTML = data.tileWidth;
       document.getElementById("tile-height").innerHTML = data.tileHeight;
 
-      updateDebug(data.collisionRectangles, data.tileWidth, data.tileHeight, debugContainer);
+      updateDebug(data.staticGeometry, data.tileWidth, data.tileHeight, debugContainer);
       updatePlayfield(data.layers, data.tileWidth, data.tileHeight, playfieldContainer);
       updateEntities(data.entities, data.tileWidth, data.tileHeight, entitiesContainer);
     }

@@ -6,6 +6,7 @@ import Test.Framework.Providers.HUnit
 import Test.HUnit
 
 import Collision
+import Geometry
 
 main = defaultMain tests
 
@@ -18,24 +19,26 @@ testRunPhysics = testGroup "runPhysics"
   , testCase "test4" test4
   ]
 
-  where a = (newBody $ read "5108b670-3332-4172-862d-89bf68576ed6")
-          { bodyPosition    = (2, 0)
+  where a = Rectangle (1.5, -0.5) (1, 1)
+
+        b = (newBody $ read "5108b670-3332-4172-862d-89bf68576ed6")
+          { bodyPosition    = (0, 0)
           , bodyVelocity    = (1, 0)
           , bodyInverseMass = 1.5
           }
 
-        b = (newBody $ read "6b0283ac-01ca-418a-a775-d6bdb8ae465a")
+        c = (newBody $ read "6b0283ac-01ca-418a-a775-d6bdb8ae465a")
           { bodyPosition    = (4, 0)
           , bodyVelocity    = (-1, 0)
           , bodyInverseMass = 0.5
           }
 
-        [a', b'] = runPhysics [a, b] 1
+        [b', c'] = runPhysics [a] [b, c] 1
 
-        test1 = bodyPosition a' @?~= ( 1.5, 0.0)
-        test2 = bodyPosition b' @?~= ( 3.5, 0.0)
-        test3 = bodyVelocity a' @?~= (-2.0, 0.0)
-        test4 = bodyVelocity b' @?~= ( 0.0, 0.0)
+        test1 = bodyPosition b' @?~= ( 1.5, 0.0)
+        test2 = bodyPosition c' @?~= ( 3.5, 0.0)
+        test3 = bodyVelocity b' @?~= (-2.0, 0.0)
+        test4 = bodyVelocity c' @?~= ( 0.0, 0.0)
 
 testCalculateCollision = testGroup "calculateCollision"
   [ testCase "test1" test1

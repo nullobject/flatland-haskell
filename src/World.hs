@@ -28,17 +28,14 @@ data World = World
     -- The layers in the world map.
   , worldLayers :: [Layer]
 
-    -- The static bodies.
-  , worldStaticBodies :: [Body]
-
     -- A map of the entities in the world.
   , worldEntityMap :: EntityMap
 
     -- The bullets flying around.
   , worldBullets :: [Bullet]
 
-    -- The collision geometry.
-  , worldCollisionRectangles :: [Rectangle]
+    -- The static geometry.
+  , worldStaticGeometry :: [Rectangle]
 
     -- The positions a player can spawn from.
   , worldSpawnPoints :: [Position]
@@ -51,12 +48,12 @@ data World = World
   } deriving (Show)
 
 instance ToJSON World where
-  toJSON world = object [ "age"                 .= worldAge world
-                        , "layers"              .= worldLayers world
-                        , "entities"            .= worldEntities world
-                        , "collisionRectangles" .= worldCollisionRectangles world
-                        , "tileWidth"           .= worldTileWidth world
-                        , "tileHeight"          .= worldTileHeight world
+  toJSON world = object [ "age"            .= worldAge world
+                        , "layers"         .= worldLayers world
+                        , "entities"       .= worldEntities world
+                        , "staticGeometry" .= worldStaticGeometry world
+                        , "tileWidth"      .= worldTileWidth world
+                        , "tileHeight"     .= worldTileHeight world
                         ]
 
 -- A world wire takes a list of messages and produces a world state.
@@ -72,42 +69,30 @@ entityWithId identifier world = Map.lookup identifier entitiesMap
   where entitiesMap = worldEntityMap world
 
 -- Returns a new world state for the given tiled map.
-newWorld :: TiledMap -> IO World
-newWorld tiledMap = do
-  -- Calculate the static bodies.
-  staticBodies <- mapM staticBody collisionRectangles
+newWorld :: TiledMap -> World
+newWorld tiledMap = World { worldAge            = 0
+                          , worldLayers         = layers
+                          , worldEntityMap      = Map.empty
+                          , worldBullets        = []
+                          , worldStaticGeometry = staticGeometry
+                          , worldSpawnPoints    = spawnPoints
+                          , worldTileWidth      = tileWidth
+                          , worldTileHeight     = tileHeight
+                          }
 
-  return World { worldAge                 = 0
-               , worldLayers              = layers
-               , worldStaticBodies        = staticBodies
-               , worldEntityMap           = Map.empty
-               , worldBullets             = []
-               , worldCollisionRectangles = collisionRectangles
-               , worldSpawnPoints         = spawnPoints
-               , worldTileWidth           = tileWidth
-               , worldTileHeight          = tileHeight
-               }
-
-  where layers              = Map.getTileLayers tiledMap
-        collisionRectangles = Map.getCollisionRectangles tiledMap
-        spawnPoints         = map rectangleCentre $ Map.getSpawnRectangles tiledMap
-        tileWidth           = Map.mapTileWidth tiledMap
-        tileHeight          = Map.mapTileHeight tiledMap
-
--- Returns a new static body for the given rectangle.
-staticBody :: Rectangle -> IO Body
-staticBody rectangle = do
-  id <- Identifier.nextRandom
-  return (newBody id) { bodyPosition    = rectangleCentre  rectangle
-                      , bodyExtents     = rectangleExtents rectangle
-                      , bodyInverseMass = 0
-                      }
+  where layers         = Map.getTileLayers tiledMap
+        staticGeometry = Map.getCollisionRectangles tiledMap
+        spawnPoints    = map rectangleCentre $ Map.getSpawnRectangles tiledMap
+        tileWidth      = Map.mapTileWidth tiledMap
+        tileHeight     = Map.mapTileHeight tiledMap
 
 -- Returns a new world wire given an initial world state.
 worldWire :: World -> WorldWire
 worldWire world = worldWire' world $ entityRouter entityConstructor
   where
     entityConstructor = entityWire $ worldSpawnPoints world
+
+    staticGeometry = worldStaticGeometry world
 
     -- TODO: Step the entities, run physics, then step entities again.
     worldWire' :: World -> EntityRouter -> WorldWire
@@ -120,10 +105,8 @@ worldWire world = worldWire' world $ entityRouter entityConstructor
                         Right entitiesMap -> entitiesMap
 
       -- Run the physics simulation.
-      let entityBodies = map entityBody $ Map.elems entitiesMap
-          staticBodies = worldStaticBodies world
-          bodies       = staticBodies ++ entityBodies
-          bodies'      = runPhysics bodies dt
+      let bodies  = map entityBody $ Map.elems entitiesMap
+          bodies' = runPhysics staticGeometry bodies dt
 
       -- Step the entity router with 'Update' messages.
       let messages' = map (\body -> (bodyId body, Update body)) bodies'

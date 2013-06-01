@@ -92,14 +92,14 @@ bulletSpeed :: Double
 bulletSpeed = 1
 
 -- Returns a new entity.
-newEntity :: Identifier -> Position -> IO Entity
-newEntity identifier position = return Entity { entityAge    = 0
-                                              , entityBody   = body
-                                              , entityHealth = 100
-                                              , entityEnergy = 100
-                                              , entityState  = Entity.Idle
-                                              , entityBullet = Nothing
-                                              }
+newEntity :: Identifier -> Position -> Entity
+newEntity identifier position = Entity { entityAge    = 0
+                                       , entityBody   = body
+                                       , entityHealth = 100
+                                       , entityEnergy = 100
+                                       , entityState  = Entity.Idle
+                                       , entityBullet = Nothing
+                                       }
   where body = (newBody identifier) {bodyPosition = position}
 
 -- If the entity has enough energy to perform the intended action then it
@@ -219,7 +219,7 @@ entityWire spawnPoints identifier = mkGen $ \dt message -> do
   position <- pick spawnPoints
 
   -- Create a new entity.
-  entity <- newEntity identifier position
+  let entity = newEntity identifier position
 
   -- Create an entity wire.
   let wire = entityWire_ entity

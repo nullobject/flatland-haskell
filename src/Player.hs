@@ -66,18 +66,18 @@ type PlayerRouter = MyWire [Message] ([Message], PlayerMap)
 type PlayerWireConstructor = Identifier -> PlayerWire
 
 -- Returns a new player with the given identifier.
-newPlayer :: Identifier -> IO Player
-newPlayer identifier = return Player { playerId       = identifier
-                                     , playerState    = Dead
-                                     , playerEntityId = Nothing
-                                     }
+newPlayer :: Identifier -> Player
+newPlayer identifier = Player { playerId       = identifier
+                              , playerState    = Dead
+                              , playerEntityId = Nothing
+                              }
 
 -- Returns a new player wire given an initial player state.
 --
 -- TODO: If a player message hasn't been received for 10 seconds, then inhibit.
 playerWire :: PlayerWireConstructor
 playerWire identifier = mkGen $ \dt messages -> do
-  player <- newPlayer identifier
+  let player = newPlayer identifier
   stepWire (playerWire_ player) dt messages
   where
     playerWire_ :: Player -> PlayerWire

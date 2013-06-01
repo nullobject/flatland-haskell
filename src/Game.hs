@@ -45,12 +45,11 @@ playerWithId identifier game = Map.lookup identifier playerMap
   where playerMap = gamePlayerMap game
 
 -- Returns a new game state for the given tiled map.
-newGame :: TiledMap -> IO Game
-newGame tiledMap = do
-  world <- newWorld tiledMap
-  return Game { gameWorld     = world
-              , gamePlayerMap = Map.empty
-              }
+newGame :: TiledMap -> Game
+newGame tiledMap = Game { gameWorld     = world
+                        , gamePlayerMap = Map.empty
+                        }
+  where world = newWorld tiledMap
 
 -- Returns a new game wire for the given initial game state.
 gameWire :: Game -> GameWire
@@ -84,7 +83,7 @@ run messageChannel eventChannel = do
   tiledMap <- loadMapFile "static/test.tmx"
 
   -- Create a new game.
-  game <- newGame tiledMap
+  let game = newGame tiledMap
 
   -- Create a game wire.
   let wire = gameWire game
