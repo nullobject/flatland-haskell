@@ -74,7 +74,7 @@ type EntityRouter = MyWire [Message] EntityMap
 type EntityWireConstructor = Identifier -> EntityWire
 
 entitySpeed :: Double
-entitySpeed = 1
+entitySpeed = 1.0
 
 entityId :: Entity -> Identifier
 entityId entity = bodyId $ entityBody entity

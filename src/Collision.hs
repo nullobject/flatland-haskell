@@ -22,7 +22,14 @@ import Identifier
 type Time = Double
 
 -- Represents an axis-aligned bounding box.
-data AABB = AABB Point Extents deriving (Eq, Show)
+data AABB = AABB
+  {
+    -- The centre of the AABB.
+    aabbCentre :: Point
+
+    -- The extents (half-width & half-height from the centre) of the AABB.
+  , aabbExtents :: Extents
+  } deriving (Eq, Show)
 
 -- Represents a rigid body.
 data Body = Body
@@ -93,32 +100,67 @@ newBody identifier = Body { bodyId          = identifier
 -- over a time interval.
 runPhysics :: [Rectangle] -> [Body] -> Time -> [Body]
 runPhysics staticGeometry bodies 0 = bodies
-runPhysics staticGeometry bodies dt
-  -- If there were no collisions, then we're done.
-  | null collisions = integrateBodies bodies dt
+runPhysics staticGeometry bodies dt = runPhysics' 0 staticGeometry bodies dt
+  where
+    runPhysics' steps staticGeometry bodies dt
+      -- If there were no collisions, then we're done.
+      | null collisions = integrateBodies bodies dt
 
-  -- If the first collision occurs after the time interval, then we're done.
-  | tFirst > dt = integrateBodies bodies dt
+      -- Sanity checks.
+      | steps > 10  = error "runPhysics: too many steps"
+      | tFirst == 0 = error "runPhysics: collision at t=0"
 
-  -- Otherwise, integrate the bodies until the time of the first collision.
-  -- Resolve the collision, then run the simulation for the remainder of the
-  -- time interval.
-  | otherwise = runPhysics staticGeometry bodies' dt'
+      -- If the first collision occurs after the time interval, then we're done.
+      | tFirst > dt = integrateBodies bodies dt
 
-  where collisions = calculateCollisions bodies dt
-        firstCollision = minimum collisions
-        tFirst = collisionFirstContactTime firstCollision
-        tFirst' = tFirst - epsilon
-        dt' = dt - tFirst'
-        epsilon = 1.0e-8
-        nonCollidingBodies = bodies \\ collisionBodies firstCollision
-        bodies' = integrateBodies nonCollidingBodies tFirst' ++ resolveCollision firstCollision tFirst'
+      -- Otherwise, integrate the bodies until the time of the first collision.
+      -- Resolve the collision, then run the simulation for the remainder of the
+      -- time interval.
+      | otherwise = runPhysics' (steps + 1) staticGeometry bodies' dt'
+
+      where collisions = calculateCollisions staticGeometry bodies dt
+            firstCollision = minimum collisions
+            tFirst = collisionFirstContactTime firstCollision
+            tFirst' = tFirst - epsilon
+            dt' = dt - tFirst'
+            epsilon = 1.0e-8
+            nonCollidingBodies = bodies \\ collisionBodies firstCollision
+            bodies' = resolveCollision firstCollision tFirst' ++ integrateBodies nonCollidingBodies tFirst'
 
 -- Resolves the velocities of the bodies in the given collision.
 --
 -- Refer to chapter 7 of Game Physics Engine Development.
 resolveCollision :: Collision -> Time -> [Body]
 resolveCollision collision dt
+  | numBodies == 1 = resolveOneBodyCollision collision dt
+  | otherwise      = resolveTwoBodyCollision collision dt
+  where numBodies = length $ collisionBodies collision
+
+resolveOneBodyCollision :: Collision -> Time -> [Body]
+resolveOneBodyCollision collision dt
+  -- If the bodies are already separating, then there's no impulse required.
+  | separatingVelocity > 0 = [body']
+
+  -- If the body has infinite mass, then impulses have no effect.
+  | inverseMass <= 0 = [body']
+
+  -- Otherwise, apply an impulse proportional to the inverse mass of the bodies.
+  | otherwise = [body' {bodyVelocity = velocity ^+^ totalInverseMass *^ impulsePerUnitInverseMass}]
+
+  where body = head $ collisionBodies collision
+        body' = integrateBody body dt
+        separatingVelocity = velocity <.> collisionNormal collision
+        separatingVelocity' = -restitution * separatingVelocity
+        deltaVelocity = separatingVelocity' - separatingVelocity
+        totalInverseMass = inverseMass
+        impulse = deltaVelocity / totalInverseMass
+        impulsePerUnitInverseMass = collisionNormal collision ^* impulse
+        velocity = bodyVelocity body
+        inverseMass = bodyInverseMass body
+        restitution = 0.0
+
+resolveTwoBodyCollision :: Collision -> Time -> [Body]
+resolveTwoBodyCollision collision dt
   -- If the bodies are already separating, then there's no impulse required.
   | separatingVelocity > 0 = [bodyA', bodyB']
 
@@ -159,15 +201,39 @@ integrateBody body dt = body {bodyPosition = position'}
         position' = position ^+^ (velocity ^* dt)
 
 -- Returns the collisions between the given dynamic bodies over a time interval.
-calculateCollisions :: [Body] -> Time -> [Collision]
-calculateCollisions bodies dt = mapMaybe (uncurry collideBodies) $ pairs bodies
+calculateCollisions :: [Rectangle] -> [Body] -> Time -> [Collision]
+calculateCollisions staticGeometry bodies dt = staticCollisions ++ dynamicCollisions
+  where
+    -- Collide the dynamic bodies with the static geometry.
+    staticCollisions = catMaybes [collideBodyWithStaticGeometry body rectangle | body <- bodies, rectangle <- staticGeometry]
 
--- Returns a possible collision between the given bodies.
-collideBodies :: Body -> Body -> Maybe Collision
-collideBodies bodyA bodyB
+    -- Collide the dynamic bodies with each other.
+    dynamicCollisions = mapMaybe (uncurry collideBodyWithBody) $ pairs bodies
+
+-- Returns a possible collision between the given body and static geometry.
+collideBodyWithStaticGeometry :: Body -> Rectangle -> Maybe Collision
+collideBodyWithStaticGeometry body rectangle
   | isJust contact = Just collision
   | otherwise      = Nothing
-  where contact = calculateCollision (AABB positionA extentsA) (AABB positionB extentsB) velocityA velocityB
+  where contact = calculateCollision a b velocityA zeroV
+        a = AABB positionA extentsA
+        b = getRectangleAABB rectangle
+        Just (tFirst, tLast) = contact
+        collision = Collision [body] tFirst tLast normal
+        normal = normalized $ positionA ^-^ positionB
+        velocityA = bodyVelocity body
+        positionA = bodyPosition body
+        extentsA = bodyExtents body
+        positionB = aabbCentre b
+
+-- Returns a possible collision between the given two bodies.
+collideBodyWithBody :: Body -> Body -> Maybe Collision
+collideBodyWithBody bodyA bodyB
+  | isJust contact = Just collision
+  | otherwise      = Nothing
+  where contact = calculateCollision a b velocityA velocityB
+        a = AABB positionA extentsA
+        b = AABB positionB extentsB
         Just (tFirst, tLast) = contact
         collision = Collision [bodyA, bodyB] tFirst tLast normal
         normal = normalized $ positionA ^-^ positionB
@@ -205,8 +271,8 @@ calculateCollision a b velocityA velocityB
         -- Y-axis first/last contact times.
         (tFirst1, tLast1) = axisCollisionTimes (aMin1, aMax1) (bMin1, bMax1) v1
 
-        ((aMin0, aMin1), (aMax0, aMax1)) = calculateAABBExtents a
-        ((bMin0, bMin1), (bMax0, bMax1)) = calculateAABBExtents b
+        ((aMin0, aMin1), (aMax0, aMax1)) = axisExtents a
+        ((bMin0, bMin1), (bMax0, bMax1)) = axisExtents b
 
         (v0, v1) = velocityB ^-^ velocityA
 
@@ -222,8 +288,8 @@ axisCollisionTimes (aMin, aMax) (bMin, bMax) v = (tFirst, tLast)
           | aMax > bMin && v > 0 = (aMax - bMin) / v
           | otherwise = 1
 
-calculateAABBExtents :: AABB -> (Extents, Extents)
-calculateAABBExtents (AABB centre extents) = (centre ^-^ extents, centre ^+^ extents)
+axisExtents :: AABB -> (Extents, Extents)
+axisExtents (AABB centre extents) = (centre ^-^ extents, centre ^+^ extents)
 
 -- Returns true if the given AABBs are intersecting, false otherwise.
 intersectAABB :: AABB -> AABB -> Bool
@@ -234,6 +300,6 @@ intersectAABB (AABB (aCentre0, aCentre1) (aRadius0, aRadius1)) (AABB (bCentre0, 
 
 -- Converts the given rectangle to an AABB.
 getRectangleAABB :: Rectangle -> AABB
-getRectangleAABB (Rectangle position extents) = AABB centre halfExtents
-  where centre = position ^+^ halfExtents
-        halfExtents = extents ^/ 2
+getRectangleAABB (Rectangle position extents) = AABB position' extents'
+  where position' = position ^+^ extents'
+        extents'  = extents ^/ 2

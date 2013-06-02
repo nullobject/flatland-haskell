@@ -23,8 +23,8 @@ data Rectangle = Rectangle
     -- The position of the bottom-left point of the rectangle.
     rectanglePosition :: Point
 
-    -- The extents (width & height) of the rectangle.
-  , rectangleExtents  :: Extents
+    -- The extents (width & height from the bottom-left) of the rectangle.
+  , rectangleExtents :: Extents
   } deriving (Eq, Show)
 
 -- A list of triangles.
