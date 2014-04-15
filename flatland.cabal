@@ -21,7 +21,7 @@ source-repository head
 executable flatland
   default-language: Haskell2010
   ghc-options: -fwarn-tabs -funbox-strict-fields -fno-warn-unused-do-bind -O2 -threaded -Wall
-  extensions: Arrows, OverloadedStrings
+  default-extensions: Arrows, OverloadedStrings
   hs-source-dirs: src
   main-is: Main.hs
   build-depends:
@@ -37,7 +37,7 @@ executable flatland
     , http-types
     , keys
     , mtl
-    , netwire
+    , netwire >= 4.0.7 && < 5
     , random
     , stm
     , text
